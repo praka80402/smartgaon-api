@@ -42,6 +42,10 @@
 
 package com.smartgaon.ai.smartgaon_api.model;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -64,6 +68,17 @@ public class User {
 
     private String phone;
     private String password;
+    
+    
+    //  link posts to users 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Post> posts;
+
+    // link comments to users 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Comment> comments;
 }
 
 

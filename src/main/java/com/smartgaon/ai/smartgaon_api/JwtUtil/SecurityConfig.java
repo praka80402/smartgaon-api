@@ -27,7 +27,8 @@ public class SecurityConfig {
 				}))
 				.headers(headers -> headers.frameOptions(frame -> frame.disable()))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/pdf/**", "/api/auth/**").permitAll()
+						.requestMatchers( "/api/pdf/**","/api/auth/**").permitAll()
+						 .requestMatchers("/api/posts/**", "/api/comments/**", "/api/profile/**").permitAll()
 						.anyRequest().authenticated()
 				);
 
