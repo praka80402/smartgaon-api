@@ -50,10 +50,22 @@ public class AuthController {
     @Autowired private JwtUtil jwt;
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signup(@RequestBody User u) {
-        auth.signup(u);
+    
+    public ResponseEntity<String> signup(@RequestBody Map<String, String> req) {
+        User user = new User();
+        user.setFirstName(req.get("firstName"));
+        user.setLastName(req.get("lastName"));
+        user.setEmail(req.get("email"));
+        user.setPhone(req.get("phone"));
+        user.setPassword(req.get("password"));
+
+        auth.signup(user);
         return ResponseEntity.ok("User registered successfully");
     }
+//    public ResponseEntity<String> signup(@RequestBody User u) {
+//        auth.signup(u);
+//        return ResponseEntity.ok("User registered successfully");
+//    }
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody Map<String,String> loginData) {
@@ -61,7 +73,7 @@ public class AuthController {
         String password = loginData.get("password");
 
         return auth.validate(email, password)
-                   .map(u -> ResponseEntity.ok(jwt.generate(email)))  // returns plain token
+                   .map(u -> ResponseEntity.ok(jwt.generate(email)))  
                    .orElseGet(() -> ResponseEntity.status(401).body("Invalid email or password"));
     }
 }

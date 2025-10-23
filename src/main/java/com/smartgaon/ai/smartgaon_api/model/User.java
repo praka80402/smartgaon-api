@@ -70,6 +70,17 @@ public class User {
     private String password;
     
     
+    @Column(nullable = true)
+    private String village;
+
+    @Column(nullable = true, length = 500)
+    private String bio;
+
+    @Lob
+    @JsonIgnore
+    private byte[] profileImage;
+
+    
     //  link posts to users 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore

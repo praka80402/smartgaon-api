@@ -41,23 +41,6 @@ public class AuthService {
     @Autowired
     private UserRepository repo;
 
-//    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-//
-//    // ✅ Signup
-//    public User signup(User user) {
-//        user.setPassword(passwordEncoder.encode(user.getPassword())); 
-//        return userRepository.save(user);
-//    }
-//
-//    // ✅ Login
-//    public Optional<User> validateUser(String email, String password) {
-//        Optional<User> userOpt = userRepository.findByEmail(email);
-//        if (userOpt.isPresent() && passwordEncoder.matches(password, userOpt.get().getPassword())) {
-//            return userOpt;
-//        }
-//        return Optional.empty();
-//    }
-//}
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
@@ -69,6 +52,16 @@ public class AuthService {
     public Optional<User> validate(String email, String pass) {
         return repo.findByEmail(email)
                    .filter(u -> encoder.matches(pass, u.getPassword()));
+    }
+    
+    
+    public Optional<User> findByEmail(String email) {
+        return repo.findByEmail(email);
+    }
+
+    // ✅ Save updated user (for bio, village, image)
+    public User saveUser(User user) {
+        return repo.save(user);
     }
 }
 
