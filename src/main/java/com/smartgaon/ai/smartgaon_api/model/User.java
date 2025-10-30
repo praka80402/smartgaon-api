@@ -68,8 +68,10 @@ public class User {
 
     private String phone;
     private String password;
-    
-    
+    @Column(name = "reset_token")
+    private String resetToken;
+   
+
     @Column(nullable = true)
     private String village;
 
@@ -80,6 +82,8 @@ public class User {
     @JsonIgnore
     private byte[] profileImage;
 
+    @Column(nullable = true, length = 100)
+    private String occupation;
     
     //  link posts to users 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

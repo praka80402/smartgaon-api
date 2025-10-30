@@ -47,7 +47,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import java.util.Map;
 import java.io.IOException;
 import java.util.Optional;
 
@@ -79,8 +80,7 @@ public class ProfileController {
             return ResponseEntity.status(401).body("Invalid token");
         }
     }
-
-
+    
     @PutMapping("/update")
     public ResponseEntity<?> updateProfile(
             @RequestHeader("Authorization") String token,
@@ -93,8 +93,15 @@ public class ProfileController {
             if (userOpt.isEmpty()) return ResponseEntity.status(404).body("User not found");
 
             User user = userOpt.get();
-            user.setBio(updatedData.getBio());
-            user.setVillage(updatedData.getVillage());
+
+            // ✅ Update editable fields
+            if (updatedData.getFirstName() != null) user.setFirstName(updatedData.getFirstName());
+            if (updatedData.getLastName() != null) user.setLastName(updatedData.getLastName());
+            if (updatedData.getEmail() != null) user.setEmail(updatedData.getEmail());
+            if (updatedData.getBio() != null) user.setBio(updatedData.getBio());
+            if (updatedData.getVillage() != null) user.setVillage(updatedData.getVillage());
+            if (updatedData.getOccupation() != null) user.setOccupation(updatedData.getOccupation());
+
             userRepo.save(user);
 
             return ResponseEntity.ok("Profile updated successfully!");
@@ -102,7 +109,43 @@ public class ProfileController {
             return ResponseEntity.status(500).body("Error updating profile");
         }
     }
-    // ✅ Upload or update profile picture
+
+
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String token,
+            @RequestBody Map<String, String> passwords) {
+
+        try {
+            if (token.startsWith("Bearer ")) token = token.substring(7);
+            String email = jwtUtil.extractEmail(token);
+
+            Optional<User> userOpt = userRepo.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(404).body("User not found");
+            }
+
+            User user = userOpt.get();
+            String currentPassword = passwords.get("currentPassword");
+            String newPassword = passwords.get("newPassword");
+
+          
+            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+            if (!encoder.matches(currentPassword, user.getPassword())) {
+                return ResponseEntity.status(400).body("❌ Current password is incorrect");
+            }
+
+          
+            user.setPassword(encoder.encode(newPassword));
+            userRepo.save(user);
+
+            return ResponseEntity.ok("✅ Password changed successfully!");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error changing password");
+        }
+    }
+
+
     @PostMapping("/upload-image")
     public ResponseEntity<?> uploadImage(
             @RequestHeader("Authorization") String token,
@@ -127,7 +170,7 @@ public class ProfileController {
         }
     }
 
-    // ✅ Fetch profile image (for displaying in React)
+   
     @GetMapping("/image")
     public ResponseEntity<?> getProfileImage(@RequestHeader("Authorization") String token) {
         try {
