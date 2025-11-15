@@ -1,63 +1,88 @@
+
+//
 //package com.smartgaon.ai.smartgaon_api.model;
-//import jakarta.persistence.Entity;
-//import jakarta.persistence.Id;
-//import jakarta.persistence.GeneratedValue;
-//import jakarta.persistence.Table;
+//
+//import java.util.List;
+//
+//import com.fasterxml.jackson.annotation.JsonIgnore;
+//import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+//
+//import jakarta.persistence.*;
+//import lombok.*;
 //
 //@Entity
+//@Table(name = "users")
+//@Data                 
+//@NoArgsConstructor     
+//@AllArgsConstructor
+//@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 //public class User {
+//
 //    @Id
-//    @GeneratedValue
+//    @GeneratedValue(strategy = GenerationType.IDENTITY) 
 //    private Long id;
+//
+//    private String firstName;
+//    private String lastName;
+//
+//    @Column(unique = true)
 //    private String email;
+//
+//    private String phone;
 //    private String password;
+//    @Column(name = "reset_token")
+//    private String resetToken;
+//   
 //
-//    public String getEmail() {
-//        return email;
-//    }
+//    @Column(nullable = true)
+//    private String village;
 //
-//    public void setEmail(String email) {
-//        this.email = email;
-//    }
+//    @Column(nullable = true, length = 500)
+//    private String bio;
 //
-//    public Long getId() {
-//        return id;
-//    }
+//    @Lob
+//    @JsonIgnore
+//    private byte[] profileImage;
 //
-//    public void setId(Long id) {
-//        this.id = id;
-//    }
+//    @Column(nullable = true, length = 100)
+//    private String occupation;
+//    
+//    //  link posts to users 
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Post> posts;
 //
-//
-//
-//    public String getPassword() {
-//        return password;
-//    }
-//
-//    public void setPassword(String password) {
-//        this.password = password;
-//    }
+//    // link comments to users 
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Comment> comments;
 //}
 
 
+
+
+//-----------------------------------------------------------------------------
 package com.smartgaon.ai.smartgaon_api.model;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
-@Data                 
-@NoArgsConstructor     
-@AllArgsConstructor                  
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String firstName;
@@ -66,17 +91,19 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(unique = true)
     private String phone;
+
     private String password;
+
     @Column(name = "reset_token")
     private String resetToken;
-   
 
     @Column(nullable = true)
     private String village;
 
-    @Column(nullable = true, length = 500)
-    private String bio;
+//    @Column(nullable = true, length = 500)
+//    private String bio;
 
     @Lob
     @JsonIgnore
@@ -84,22 +111,31 @@ public class User {
 
     @Column(nullable = true, length = 100)
     private String occupation;
+
+    private String otp;
+    private LocalDateTime otpExpiry;
+    private boolean verified = false;
     
-    //  link posts to users 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Post> posts;
+    
+    @Column(length =6 )
+    private String pincode;
 
-    // link comments to users 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
-    private List<Comment> comments;
+    @Column(length = 100)
+    private String area;
+
+    @Column(name = "profile_completed")
+    private boolean profileCompleted = false;
+
+    
+//
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Post> posts;
+
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+//    @JsonIgnore
+//    private List<Comment> comments;
 }
-
-
-
-
-
 
 
 

@@ -1,4 +1,4 @@
-package com.smartgaon.ai.smartgaon_api.controller;
+package com.smartgaon.ai.smartgaon_api.chatbot;
 
 
 
