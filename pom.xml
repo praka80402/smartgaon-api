@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.5.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/> 
 	</parent>
 	<groupId>com.smartgaon.ai</groupId>
 	<artifactId>smartgaon-api</artifactId>
@@ -70,6 +70,25 @@
       <artifactId>lombok</artifactId>
       <optional>true</optional>
     </dependency>
+      
+      <!-- JSON Parser -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+</dependency>
+
+<!-- Scheduler Support -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+</dependency>
+
+<!-- Optional: Email Alert -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+
 
 		<dependency>
 			<groupId>com.mysql</groupId>
@@ -81,7 +100,44 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		
+			<!--24 oct add this dependency for chat bot-->
+	
+ <dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-text</artifactId>
+    <version>1.12.0</version>
+</dependency>
+
+<!--28 oct add dependency for singup-->
+
+<dependency>
+  <groupId>com.google.api-client</groupId>
+  <artifactId>google-api-client</artifactId>
+  <version>2.0.0</version>
+</dependency>
+
+<dependency>
+  <groupId>com.google.http-client</groupId>
+  <artifactId>google-http-client-jackson2</artifactId>
+  <version>1.43.3</version>
+</dependency>
+		
+			<!--29 oct add dependency for forget password-->
+			<!-- For sending emails using Spring Boot -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+
+		
 	</dependencies>
+	
+
+
+	
+	
+	
 
 	<build>
 		<plugins>
