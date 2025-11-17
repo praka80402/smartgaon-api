@@ -3,8 +3,9 @@ package com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.service;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.multipart.MultipartFile;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.CreatePostRequest;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.PostResponse;
+
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.CreatePostRequest;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.PostResponse;
 
 public interface PostService {
 	

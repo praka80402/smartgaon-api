@@ -1,4 +1,4 @@
-package com.smartgaon.ai.smartgaon_api.GaonConnect.model;
+package com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.model;
 
 
 
@@ -30,7 +30,7 @@ public class Post {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "short_description")
+    @Column(columnDefinition = "TEXT")
     private String shortDescription;
 
     private String pictureUrl;

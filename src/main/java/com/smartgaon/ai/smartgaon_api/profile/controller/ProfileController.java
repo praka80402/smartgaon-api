@@ -261,9 +261,11 @@ public class ProfileController {
         // ⭐ Send custom structured response with fullName
         return ResponseEntity.ok(
                 new java.util.HashMap<String, Object>() {{
+                	put("id", user.getId());
                     put("firstName", user.getFirstName());
                     put("lastName", user.getLastName());
                     put("fullName", fullName.trim());
+                 
                     put("phone", user.getPhone());
                     put("email", user.getEmail());
                     put("pincode", user.getPincode());

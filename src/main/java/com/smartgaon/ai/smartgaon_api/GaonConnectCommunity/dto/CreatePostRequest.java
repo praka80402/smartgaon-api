@@ -1,4 +1,4 @@
-package com.smartgaon.ai.smartgaon_api.GaonConnect.dto;
+package com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto;
 
 import lombok.Data;
 
