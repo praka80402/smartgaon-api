@@ -135,6 +135,7 @@ import java.util.Base64;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.*;
 
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
@@ -144,6 +145,7 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectForum.model.ForumPost;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.repository.ForumPostRepository;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.ForumPostService;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
+import com.smartgaon.ai.smartgaon_api.cloudinary.CloudinaryService;
 import com.smartgaon.ai.smartgaon_api.model.User;
 
 import jakarta.transaction.Transactional;
@@ -153,6 +155,10 @@ public class ForumPostServiceImpl implements ForumPostService {
 
     @Autowired
     private ForumPostRepository postRepo;
+    
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
 
     @Autowired
     private UserRepository userRepo;
@@ -301,5 +307,33 @@ public class ForumPostServiceImpl implements ForumPostService {
         post.setStatus(ForumPost.Status.DELETED);
         postRepo.save(post);
     }
+    
+    @Override
+    public ForumPostResponse createWithImage(
+            Long userId,
+            String title,
+            String content,
+            String category,
+            String area,
+            MultipartFile image
+    ) {
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Upload image to Cloudinary
+        String imageUrl = cloudinaryService.uploadFile(image);
+
+        ForumPost post = new ForumPost();
+        post.setUser(user);
+        post.setTitle(title);
+        post.setContent(content);
+        post.setCategory(category);
+        post.setArea(area);
+        post.getMediaAttachments().add(imageUrl); // ⭐ Add Cloudinary URL
+
+        return map(postRepo.save(post));
+    }
+
 }
 

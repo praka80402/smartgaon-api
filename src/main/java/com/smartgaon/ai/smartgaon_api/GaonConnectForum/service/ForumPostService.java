@@ -2,6 +2,8 @@ package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostUpdateDto;
@@ -25,5 +27,15 @@ public interface ForumPostService {
 	    ForumPostResponse moderate(Long postId, String status);
 
 	    void delete(Long postId);
+	    
+	    ForumPostResponse createWithImage(
+	            Long userId,
+	            String title,
+	            String content,
+	            String category,
+	            String area,
+	            MultipartFile image
+	    );
+
 
 }
