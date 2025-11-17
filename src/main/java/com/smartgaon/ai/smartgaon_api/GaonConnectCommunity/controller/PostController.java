@@ -9,8 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.CreatePostRequest;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.PostResponse;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.CreatePostRequest;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.PostResponse;
 import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.service.PostService;
 
 @RestController

@@ -11,10 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.CreatePostRequest;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.dto.PostResponse;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.model.Post;
-import com.smartgaon.ai.smartgaon_api.GaonConnect.repository.PostRepository;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.CreatePostRequest;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.dto.PostResponse;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.model.Post;
+import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.repository.PostRepository;
 
 import java.util.List;
 import java.util.UUID;
