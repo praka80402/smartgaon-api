@@ -6,6 +6,7 @@ package com.smartgaon.ai.smartgaon_api.GaonConnectForum.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
@@ -14,6 +15,7 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.ForumPostService;
 
 @RestController
 @RequestMapping("/api/forum/posts")
+@CrossOrigin(origins = "*")
 public class ForumPostController {
 
     @Autowired
@@ -72,4 +74,19 @@ public class ForumPostController {
     public void delete(@PathVariable Long id) {
         postService.delete(id);
     }
+    
+    @PostMapping(value = "/create-with-image", consumes = "multipart/form-data")
+    public ForumPostResponse createWithImage(
+            @RequestParam Long userId,
+            @RequestParam String title,
+            @RequestParam String content,
+            @RequestParam String category,
+            @RequestParam(required = false) String area,
+            @RequestParam("image") MultipartFile image
+    ) {
+        return postService.createWithImage(
+                userId, title, content, category, area, image
+        );
+    }
+
 }

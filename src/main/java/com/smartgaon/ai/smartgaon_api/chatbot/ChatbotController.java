@@ -13,7 +13,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/chat")
-@CrossOrigin(origins = "http://localhost:3000") 
+@CrossOrigin(origins = "*")
 public class ChatbotController {
 
     private final List<Map<String, String>> faqList = new ArrayList<>();
