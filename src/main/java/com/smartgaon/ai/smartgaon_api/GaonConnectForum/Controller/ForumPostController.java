@@ -1,10 +1,8 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.Controller;
 
-
-
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -55,10 +53,17 @@ public class ForumPostController {
         return postService.update(id, dto);
     }
 
-    @PostMapping("/{id}/like")
-    public ForumPostResponse like(@PathVariable Long id) {
-        return postService.like(id);
+
+    @PostMapping("/{postId}/toggle-like")
+    public ResponseEntity<ForumPostResponse> toggleLike(
+            @PathVariable Long postId,
+            @RequestParam Long userId
+    ) {
+    	 ForumPostResponse response = postService.toggleLike(postId, userId);
+    	    return ResponseEntity.ok(response);
+//        return ResponseEntity.ok(postService.toggleLike(postId, userId));
     }
+
 
     @PostMapping("/{id}/comment-count")
     public ForumPostResponse incrementComment(@PathVariable Long id) {

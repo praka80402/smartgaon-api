@@ -9,33 +9,31 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostRe
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostUpdateDto;
 
 public interface ForumPostService {
-	
-	 ForumPostResponse create(ForumPostCreateDto dto);
 
-	 ForumPostResponse getById(Long postId);
+    ForumPostResponse create(ForumPostCreateDto dto);
 
-	    Page<ForumPostResponse> list(Pageable pageable);
+    ForumPostResponse getById(Long postId);
 
-	    Page<ForumPostResponse> search(String query, Pageable pageable);
+    Page<ForumPostResponse> list(Pageable pageable);
 
-	    ForumPostResponse update(Long postId, ForumPostUpdateDto dto);
+    Page<ForumPostResponse> search(String query, Pageable pageable);
 
-	    ForumPostResponse like(Long postId);
+    ForumPostResponse update(Long postId, ForumPostUpdateDto dto);
 
-	    ForumPostResponse incrementCommentCount(Long postId);
+    ForumPostResponse toggleLike(Long postId, Long userId);
 
-	    ForumPostResponse moderate(Long postId, String status);
+    ForumPostResponse incrementCommentCount(Long postId);
 
-	    void delete(Long postId);
-	    
-	    ForumPostResponse createWithImage(
-	            Long userId,
-	            String title,
-	            String content,
-	            String category,
-	            String area,
-	            MultipartFile image
-	    );
+    ForumPostResponse moderate(Long postId, String status);
 
+    void delete(Long postId);
 
+    ForumPostResponse createWithImage(
+            Long userId,
+            String title,
+            String content,
+            String category,
+            String area,
+            MultipartFile image
+    );
 }

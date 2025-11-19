@@ -109,10 +109,19 @@ public class ForumPost {
     @CollectionTable(name = "post_media", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "media_url")
     private List<String> mediaAttachments = new ArrayList<>();
+    
 
     // ⭐ NEW FIELD — FETCHED FROM USER AUTOMATICALLY
     @Column(nullable = true)
     private String area;
+    
+    @ElementCollection
+    @CollectionTable(
+            name = "post_likes",
+            joinColumns = @JoinColumn(name = "post_id")
+    )
+    @Column(name = "user_id")
+    private Set<Long> likedUsers = new HashSet<>();
 
     private Long likeCount = 0L;
 
