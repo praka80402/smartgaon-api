@@ -79,8 +79,6 @@
 
 package com.smartgaon.ai.smartgaon_api.auth.service;
 
-
-
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.service.EmailService;
@@ -99,23 +97,30 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService {
 
-	@Autowired
+    @Autowired
     private final UserRepository repo;
     private final EmailService emailService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+
 
     // -------------------- SIGNUP --------------------
     public User signup(User u) {
         u.setPassword(encoder.encode(u.getPassword()));
         return repo.save(u);
     }
-    
+
+
+    // -------------------- SIGNUP OTP (FIXED 1235) --------------------
     public Map<String, Object> generateSignupOtp(String phone) {
 
-        String otp = "334423";  // default otp
+        String otp = "1235";   // FIXED OTP
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
-        User user = new User();
+        Optional<User> existingUser = repo.findByPhone(phone);
+
+        // user must NOT exist (handled in controller already)
+        User user = existingUser.orElse(new User());
+
         user.setPhone(phone);
         user.setOtp(otp);
         user.setOtpExpiry(expiry);
@@ -125,53 +130,14 @@ public class AuthService {
 
         Map<String, Object> response = new HashMap<>();
         response.put("otp", otp);
-        response.put("message", "OTP generated successfully for signup");
+        response.put("message", "Signup OTP generated successfully");
         response.put("phone", phone);
 
         return response;
     }
 
-    public Optional<User> findByPhone(String phone) {
-        return repo.findByPhone(phone);
-    }
 
-    // -------------------- LOGIN VALIDATION --------------------
-    public Optional<User> validate(String email, String pass) {
-        return repo.findByEmail(email)
-                .filter(u -> encoder.matches(pass, u.getPassword()));
-    }
-
-    // -------------------- FORGOT PASSWORD --------------------
-    public String forgotPassword(String email) {
-        Optional<User> optionalUser = repo.findByEmail(email);
-        if (optionalUser.isEmpty()) return "User not found";
-
-        User user = optionalUser.get();
-        String token = UUID.randomUUID().toString();
-        user.setResetToken(token);
-        repo.save(user);
-
-        String resetUrl = "http://localhost:3000/reset-password?token=" + token;
-        emailService.sendResetEmail(user.getEmail(), resetUrl);
-
-        return "Password reset link sent to your email.";
-    }
-
-    // -------------------- RESET PASSWORD --------------------
-    public String resetPassword(String token, String newPassword) {
-        Optional<User> optionalUser = repo.findByResetToken(token);
-        if (optionalUser.isEmpty()) return "Invalid or expired token.";
-
-        User user = optionalUser.get();
-        user.setPassword(encoder.encode(newPassword));
-        user.setResetToken(null);
-        repo.save(user);
-
-        return "Password reset successful.";
-    }
-
-    // -------------------- SEND OTP (DEFAULT FIXED OTP) --------------------
-
+    // -------------------- SEND OTP (LOGIN FLOW) --------------------
     public ResponseEntity<?> sendOtp(String mobile) {
 
         if (!mobile.matches("^[6-9]\\d{9}$")) {
@@ -179,29 +145,38 @@ public class AuthService {
                     Map.of("error", "Please enter a valid 10-digit mobile number.")
             );
         }
-    	
-        String otp = "123500";  // FIXED DEFAULT 6 DIGIT OTP
-        LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
         Optional<User> existingUser = repo.findByPhone(mobile);
-        User user = existingUser.orElse(new User());
 
-        user.setPhone(mobile);
+        // ❌ If user does NOT exist → Frontend should redirect to signup
+        if (existingUser.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    Map.of(
+                            "error", "User not found",
+                            "navigate", "signup"
+                    )
+            );
+        }
+
+        // ✔ User exists → send OTP
+        String otp = "1235";  // FIXED
+        LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+
+        User user = existingUser.get();
         user.setOtp(otp);
         user.setOtpExpiry(expiry);
         user.setVerified(false);
 
         repo.save(user);
-        
+
         return ResponseEntity.ok(
                 Map.of(
-                    "otp", otp,
-                    "message", "OTP generated successfully"
+                        "otp", otp,
+                        "message", "OTP generated successfully"
                 )
         );
-
-//        return "OTP generated successfully (default).";
     }
+
 
     // -------------------- VERIFY OTP --------------------
     public Map<String, Object> verifyOtp(String mobile, String otp) {
@@ -210,7 +185,7 @@ public class AuthService {
         Map<String, Object> response = new HashMap<>();
 
         if (userOpt.isEmpty()) {
-            response.put("error", "Mobile number not found.");
+            response.put("error", "Mobile number not found");
             return response;
         }
 
@@ -218,11 +193,13 @@ public class AuthService {
 
         if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
             response.put("error", "OTP expired. Please resend.");
+            response.put("verified", false);
             return response;
         }
 
         if (!user.getOtp().equals(otp)) {
-            response.put("error", "OTP invalid. Please try again.");
+            response.put("message", "Wrong OTP");
+            response.put("verified", false);
             return response;
         }
 
@@ -238,7 +215,48 @@ public class AuthService {
         return response;
     }
 
+
+    // -------------------- LOGIN WITH EMAIL (unused in mobile flow) --------------------
+    public Optional<User> validate(String email, String pass) {
+        return repo.findByEmail(email)
+                .filter(u -> encoder.matches(pass, u.getPassword()));
+    }
+
+
+    // -------------------- EMAIL & PASSWORD RESET --------------------
+    public String forgotPassword(String email) {
+        Optional<User> optionalUser = repo.findByEmail(email);
+        if (optionalUser.isEmpty()) return "User not found";
+
+        User user = optionalUser.get();
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        repo.save(user);
+
+        String resetUrl = "http://localhost:3000/reset-password?token=" + token;
+        emailService.sendResetEmail(user.getEmail(), resetUrl);
+
+        return "Password reset link sent to your email.";
+    }
+
+    public String resetPassword(String token, String newPassword) {
+        Optional<User> optionalUser = repo.findByResetToken(token);
+        if (optionalUser.isEmpty()) return "Invalid or expired token.";
+
+        User user = optionalUser.get();
+        user.setPassword(encoder.encode(newPassword));
+        user.setResetToken(null);
+        repo.save(user);
+
+        return "Password reset successful.";
+    }
+
+
     // -------------------- HELPERS --------------------
+    public Optional<User> findByPhone(String phone) {
+        return repo.findByPhone(phone);
+    }
+
     public Optional<User> findByEmail(String email) {
         return repo.findByEmail(email);
     }
@@ -246,11 +264,8 @@ public class AuthService {
     public User saveUser(User user) {
         return repo.save(user);
     }
-    
+
     public List<User> getUsersByPinCode(String pincode) {
         return repo.findByPincode(pincode);
     }
 }
-
-
-

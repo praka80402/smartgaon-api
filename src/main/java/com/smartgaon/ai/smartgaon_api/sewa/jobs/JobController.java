@@ -5,7 +5,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/jobs")
-// @CrossOrigin(origins = "*")
+
+@CrossOrigin(origins = "*")
+
 public class JobController {
 
     private final JobService service;
