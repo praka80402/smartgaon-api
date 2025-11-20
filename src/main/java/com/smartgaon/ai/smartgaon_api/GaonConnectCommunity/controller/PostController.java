@@ -15,7 +15,7 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.service.PostService;
 
 @RestController
 @RequestMapping("/api/community/posts")
-//@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*") 
 @RequiredArgsConstructor
 public class PostController {
 

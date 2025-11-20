@@ -186,8 +186,8 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
-//@CrossOrigin(origins = "*")
 
+@CrossOrigin(origins = "*")
 
 public class AuthController {
 

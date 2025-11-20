@@ -13,7 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/suggestions")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class SuggestionController {
 
