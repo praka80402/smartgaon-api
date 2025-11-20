@@ -186,7 +186,9 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
+
+
 public class AuthController {
 
     @Autowired
@@ -219,7 +221,7 @@ public class AuthController {
             );
         }
 
-        // ❌ Already registered
+       
         Optional<User> existingUser = auth.findByPhone(phone);
         if (existingUser.isPresent()) {
             return ResponseEntity.status(409).body(
@@ -309,7 +311,7 @@ public class AuthController {
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
-        return auth.sendOtp(mobile);
+        return auth.sendOtp(mobile); // 🟢 This handles login logic
     }
 
     
