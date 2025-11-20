@@ -18,14 +18,13 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
 
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "https://smart-gaon-ui.vercel.app",
-                        "https://smart-gaon-dcbgjew0i-praka80402s-projects.vercel.app"
+                .allowedOriginPatterns(
+                        "https://*.vercel.app"   // ✅ allows all Vercel preview + production URLs
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders("*")
-                .allowCredentials(true)   // Needed for secure login sessions
-                .maxAge(3600);            // Cache preflight for 1 hour
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
