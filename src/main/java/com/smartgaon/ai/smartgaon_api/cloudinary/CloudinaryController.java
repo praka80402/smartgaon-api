@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/forum/media")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 public class CloudinaryController {
 
     @Autowired
