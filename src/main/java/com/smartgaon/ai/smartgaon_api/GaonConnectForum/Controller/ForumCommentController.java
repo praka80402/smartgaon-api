@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/forum/comments")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 public class ForumCommentController {
 
     @Autowired

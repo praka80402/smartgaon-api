@@ -13,7 +13,7 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.ForumPostService;
 
 @RestController
 @RequestMapping("/api/forum/posts")
-@CrossOrigin(origins = "*")
+// @CrossOrigin(origins = "*")
 public class ForumPostController {
 
     @Autowired
