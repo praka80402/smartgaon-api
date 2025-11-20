@@ -186,7 +186,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
-// @CrossOrigin(origins = "*")
 public class AuthController {
 
     @Autowired
@@ -305,10 +304,7 @@ public class AuthController {
         }
     }
 
-//    @PostMapping("/send-otp")
-//    public String sendOtp(@RequestParam String mobile) {
-//        return auth.sendOtp(mobile);
-//    }
+
 
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
@@ -321,6 +317,13 @@ public class AuthController {
         Map<String, Object> response = auth.verifyOtp(mobile, otp);
         return ResponseEntity.ok(response);
     }
+    
+    @GetMapping("/by-pincode/{pincode}")
+    public ResponseEntity<?> getUsersByPincode(@PathVariable("pincode") String pincode) {
+        return ResponseEntity.ok(auth.getUsersByPinCode(pincode));
+    }
+
+
 }
 
 

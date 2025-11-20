@@ -87,6 +87,7 @@ import com.smartgaon.ai.smartgaon_api.service.EmailService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -98,6 +99,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AuthService {
 
+	@Autowired
     private final UserRepository repo;
     private final EmailService emailService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
@@ -169,11 +171,6 @@ public class AuthService {
     }
 
     // -------------------- SEND OTP (DEFAULT FIXED OTP) --------------------
-//    public String sendOtp(String mobile) {
-
-//        if (!mobile.matches("^[6-9]\\d{9}$")) {
-//            return "Please enter a valid 10-digit mobile number.";
-//        }
 
     public ResponseEntity<?> sendOtp(String mobile) {
 
@@ -248,6 +245,10 @@ public class AuthService {
 
     public User saveUser(User user) {
         return repo.save(user);
+    }
+    
+    public List<User> getUsersByPinCode(String pincode) {
+        return repo.findByPincode(pincode);
     }
 }
 
