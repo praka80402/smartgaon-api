@@ -1,7 +1,5 @@
 package com.smartgaon.ai.smartgaon_api.JwtUtil;
 
-
-
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -15,12 +13,19 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:src/main/resources/static/uploads/");
     }
+
     @Override
-  public void addCorsMappings(CorsRegistry registry) {
-    registry.addMapping("/**")
-      .allowedOrigins("https://smart-gaon-dcbgjew0i-praka80402s-projects.vercel.app")
-      .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
-      .allowedHeaders("*")
-      .allowCredentials(true);
-  }
+    public void addCorsMappings(CorsRegistry registry) {
+
+        registry.addMapping("/**")
+                .allowedOrigins(
+                        "https://smart-gaon-ui.vercel.app",
+                        "https://smart-gaon-dcbgjew0i-praka80402s-projects.vercel.app"
+                )
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .exposedHeaders("*")
+                .allowCredentials(true)   // Needed for secure login sessions
+                .maxAge(3600);            // Cache preflight for 1 hour
+    }
 }
