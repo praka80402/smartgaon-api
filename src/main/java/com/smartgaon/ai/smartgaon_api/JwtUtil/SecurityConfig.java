@@ -29,7 +29,7 @@ public class SecurityConfig {
 
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
-                    config.setAllowCredentials(true);
+                //    config.setAllowCredentials(true);
                     config.setExposedHeaders(List.of("*"));
 
                     return config;
@@ -54,7 +54,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of("*")); // allow all apps, solves expo issue
         config.setAllowedHeaders(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowCredentials(false);
+     //   config.setAllowCredentials(false);
 
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
