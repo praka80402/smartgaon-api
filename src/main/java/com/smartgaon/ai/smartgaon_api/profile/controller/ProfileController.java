@@ -15,16 +15,12 @@ import java.util.Base64;
 @RestController
 @RequestMapping("/api/profile")
 
-
-
 public class ProfileController {
 
     @Autowired
     private UserRepository userRepository;
 
-    // ------------------------------------------
-    // GET PROFILE BY PHONE
-    // ------------------------------------------
+ 
     @GetMapping("/{phone}")
     public ResponseEntity<?> getProfile(@PathVariable String phone) {
 

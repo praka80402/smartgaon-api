@@ -6,8 +6,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/jobs")
 
-
-
 public class JobController {
 
     private final JobService service;
