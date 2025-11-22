@@ -15,7 +15,7 @@ import java.util.Base64;
 @RestController
 @RequestMapping("/api/profile")
 
-@CrossOrigin(origins = "*")
+
 
 public class ProfileController {
 

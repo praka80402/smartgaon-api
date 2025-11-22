@@ -18,6 +18,7 @@ public class SuggestionService {
     private final SuggestionRepository repo;
 
     public Suggestion submit(Suggestion s) {
+    	
         return repo.save(s);
     }
 
@@ -46,5 +47,7 @@ public class SuggestionService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+    
+  
 }
 
