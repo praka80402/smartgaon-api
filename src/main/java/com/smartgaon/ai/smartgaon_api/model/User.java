@@ -1,4 +1,3 @@
-//-----------------------------------------------------------------------------
 package com.smartgaon.ai.smartgaon_api.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -9,7 +8,14 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    indexes = {
+        @Index(name = "idx_user_phone", columnList = "phone"),
+        @Index(name = "idx_user_email", columnList = "email"),
+        @Index(name = "idx_user_pincode", columnList = "pincode")
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,10 +29,10 @@ public class User {
     private String firstName;
     private String lastName;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 100)
     private String email;
 
-    @Column(unique = true)
+    @Column(unique = true, length = 15)
     private String phone;
 
     private String password;
@@ -52,15 +58,15 @@ public class User {
     @Column(length = 100)
     private String area;
 
-    
     @Column(length = 20)
-    private String roles;   
+    private String roles;
 
     // -----------------------------
-
-    @Lob
-    @JsonIgnore
-    private byte[] profileImage;
+    // IMAGE (CLOUDINARY)
+    // -----------------------------
+    
+    @Column(name = "profile_image_url", length = 1000)
+    private String profileImageUrl;
 
     private String otp;
     private LocalDateTime otpExpiry;
