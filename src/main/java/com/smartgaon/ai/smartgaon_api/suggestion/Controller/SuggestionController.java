@@ -13,13 +13,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/suggestions")
-// @CrossOrigin(origins = "*")
+
 @RequiredArgsConstructor
 public class SuggestionController {
 
     private final SuggestionService service;
-
-
     @PostMapping
     public ResponseEntity<?> submit(@RequestBody Suggestion s) {
         if (s.getDescription() == null || s.getDescription().trim().isEmpty()) {
