@@ -104,38 +104,34 @@ public class ForumPostServiceImpl implements ForumPostService {
 //        );
 //    }  
 
-    private ForumPostResponse map(ForumPost p) {
+   private ForumPostResponse map(ForumPost p) {
 
-        String fullName = (p.getUser().getFirstName() == null ? "" : p.getUser().getFirstName())
-                + " " +
-                (p.getUser().getLastName() == null ? "" : p.getUser().getLastName());
-        fullName = fullName.trim();
+    String fullName =
+            (p.getUser().getFirstName() == null ? "" : p.getUser().getFirstName()) + " " +
+            (p.getUser().getLastName() == null ? "" : p.getUser().getLastName());
+    fullName = fullName.trim();
 
-        // Convert profile image bytes → base64 string
-        byte[] imgBytes = p.getUser().getProfileImage();
-        String profileImageBase64 = null;
-        if (imgBytes != null && imgBytes.length > 0) {
-            profileImageBase64 = Base64.getEncoder().encodeToString(imgBytes);
-        }
+    String profileImageUrl = p.getUser().getProfileImageUrl();
 
-        return new ForumPostResponse(
-                p.getPostId(),
-                p.getUser().getId(),
-                fullName,
-                p.getTitle(),
-                p.getContent(),
-                p.getCategory(),
-                p.getArea(),
-                profileImageBase64,
-                p.getMediaAttachments(),
-                p.getLikeCount(),
-                p.getCommentCount(),
-                p.getStatus().name(),
-                p.getLikedUsers(),
-                p.getCreatedAt(),
-                p.getUpdatedAt()
-        );
-    }
+    return new ForumPostResponse(
+            p.getPostId(),
+            p.getUser().getId(),
+            fullName,
+            p.getTitle(),
+            p.getContent(),
+            p.getCategory(),
+            p.getArea(),
+            profileImageUrl,        // ⭐ replaced base64 with URL
+            p.getMediaAttachments(),
+            p.getLikeCount(),
+            p.getCommentCount(),
+            p.getStatus().name(),
+            p.getLikedUsers(),
+            p.getCreatedAt(),
+            p.getUpdatedAt()
+    );
+}
+
 
     
     

@@ -1,6 +1,5 @@
 package com.smartgaon.ai.smartgaon_api.suggestion.Service;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +17,7 @@ public class SuggestionService {
     private final SuggestionRepository repo;
 
     public Suggestion submit(Suggestion s) {
+    	
         return repo.save(s);
     }
 
@@ -46,5 +46,7 @@ public class SuggestionService {
     public void delete(Long id) {
         repo.deleteById(id);
     }
+    
+  
 }
 

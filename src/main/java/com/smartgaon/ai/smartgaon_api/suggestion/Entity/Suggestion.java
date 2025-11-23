@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.smartgaon.ai.smartgaon_api.model.User;
+
 @Entity
 @Table(name = "suggestions")
 @Data
@@ -17,10 +19,13 @@ public class Suggestion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // who submitted (optional: user id if present)
-    private Long userId;
+   
 
-    // phone used to submit (helpful to contact)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+ 
     @Column(length = 20)
     private String phone;
 
