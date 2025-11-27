@@ -1,20 +1,18 @@
 package com.smartgaon.ai.smartgaon_api.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
-    name = "users",
-    indexes = {
-        @Index(name = "idx_user_phone", columnList = "phone"),
-        @Index(name = "idx_user_email", columnList = "email"),
-        @Index(name = "idx_user_pincode", columnList = "pincode")
-    }
+        name = "users",
+        indexes = {
+                @Index(name = "idx_user_phone", columnList = "phone"),
+                @Index(name = "idx_user_email", columnList = "email"),
+                @Index(name = "idx_user_pincode", columnList = "pincode")
+        }
 )
 @Data
 @NoArgsConstructor
@@ -46,25 +44,18 @@ public class User {
     @Column(length = 20)
     private String village;
 
-    @Column(length = 50)
-    private String district;
-
-    @Column(length = 20)
-    private String state;
-
     @Column(length = 6)
     private String pincode;
 
-    @Column(length = 100)
-    private String area;
-
+    // -----------------------------
+    // ROLES (String ✅)
+    // -----------------------------
     @Column(length = 20)
     private String roles;
 
     // -----------------------------
     // IMAGE (CLOUDINARY)
     // -----------------------------
-    
     @Column(name = "profile_image_url", length = 1000)
     private String profileImageUrl;
 

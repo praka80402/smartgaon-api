@@ -53,15 +53,39 @@ public class TalentVideoController {
         String result = service.likeVideo(id, userId);
         return ResponseEntity.ok(result);
     }
+   
+ // -------------- UNLIKE ------------------------
+    @PostMapping("/{id}/unlike")
+    public ResponseEntity<?> unlike(
+            @PathVariable String id,
+            @RequestParam Long userId
+    ) {
+        String result = service.unlikeVideo(id, userId);
+        return ResponseEntity.ok(result);
+    }
 
 
     // -------------- COMMENT ---------------------
+ // COMMENT WITH TEXT + USER
     @PostMapping("/{id}/comment")
-    public ResponseEntity<?> comment(@PathVariable String id) {
-        service.commentVideo(id);
-        return ResponseEntity.ok("Comment Added");
+    public ResponseEntity<?> comment(
+            @PathVariable String id,
+            @RequestParam Long userId,
+            @RequestParam String text
+    ) {
+        return ResponseEntity.ok(service.addComment(id, userId, text));
     }
-
+    
+// // GET COMMENTS
+//    @GetMapping("/{id}/comments")
+//    public ResponseEntity<?> getComments(@PathVariable String id) {
+//        return ResponseEntity.ok(service.getComments(id));
+//    }
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<?> getComments(@PathVariable String id) {
+        return ResponseEntity.ok(service.getComments(id));
+    }
+    
     // -------------- SHARE ------------------------
     @PostMapping("/{id}/share")
     public ResponseEntity<?> share(@PathVariable String id) {
