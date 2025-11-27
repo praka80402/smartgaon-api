@@ -148,7 +148,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         post.setCategory(dto.category());
 
         // ⭐ Auto-fill AREA from User Table
-        post.setArea(user.getArea());
+//        post.setArea(user.getArea());
 
         // ⭐ Store uploaded media list
         if (dto.mediaAttachments() != null) {
