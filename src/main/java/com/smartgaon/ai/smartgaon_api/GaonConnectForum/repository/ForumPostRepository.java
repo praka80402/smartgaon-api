@@ -11,5 +11,6 @@ public interface ForumPostRepository extends JpaRepository<ForumPost, Long> {
 
     Page<ForumPost> findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(
             String title, String content, Pageable pageable);
+    Page<ForumPost> findByDeletedFalse(Pageable pageable);
 
 }

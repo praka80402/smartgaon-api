@@ -38,6 +38,7 @@ public interface ForumPostService {
             String area,
             MultipartFile image
     );
+
     ForumPostResponse createWithMedia(
             Long userId,
             String title,
@@ -45,5 +46,14 @@ public interface ForumPostService {
             String category,
             String area,
             List<MultipartFile> mediaFiles
+    );
+
+    // ⭐ NEW METHOD FOR EDITING POST + REPLACING ALL MEDIA FILES
+    ForumPostResponse editWithMedia(
+            Long postId,
+            String title,
+            String content,
+            String category,
+            List<MultipartFile> newMediaFiles
     );
 }

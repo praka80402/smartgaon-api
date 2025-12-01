@@ -1,4 +1,3 @@
-
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.model;
 
 import jakarta.persistence.*;
@@ -38,19 +37,15 @@ public class ForumPost {
 
     private String category;
 
-    // ⭐ REMOVED TAGS
-    // private Set<String> tags = new HashSet<>();
-
     @ElementCollection
     @CollectionTable(name = "post_media", joinColumns = @JoinColumn(name = "post_id"))
     @Column(name = "media_url")
     private List<String> mediaAttachments = new ArrayList<>();
-    
 
-    // ⭐ NEW FIELD — FETCHED FROM USER AUTOMATICALLY
+    // Area (optional)
     @Column(nullable = true)
     private String area;
-    
+
     @ElementCollection
     @CollectionTable(
             name = "post_likes",
@@ -65,6 +60,10 @@ public class ForumPost {
 
     @Enumerated(EnumType.STRING)
     private Status status = Status.ACTIVE;
+
+    // NEW boolean flag to mark deletion (soft delete)
+    @Column(nullable = false)
+    private boolean deleted = false;
 
     @CreationTimestamp
     private Instant createdAt;
