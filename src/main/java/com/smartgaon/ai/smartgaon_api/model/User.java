@@ -52,6 +52,11 @@ public class User {
     // -----------------------------
     @Column(length = 20)
     private String roles;
+    private String occupation;
+
+    @Column(length = 1000)
+    private String note;
+
 
     // -----------------------------
     // IMAGE (CLOUDINARY)

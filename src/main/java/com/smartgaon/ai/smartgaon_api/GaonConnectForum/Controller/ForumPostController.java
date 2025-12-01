@@ -1,5 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.Controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
@@ -95,5 +97,21 @@ public class ForumPostController {
                 userId, title, content, category, area, image
         );
     }
+    
+    
+    @PostMapping(value = "/create-multi", consumes = "multipart/form-data")
+    public ForumPostResponse createWithMedia(
+            @RequestParam Long userId,
+            @RequestParam String title,
+            @RequestParam String content,
+            @RequestParam String category,
+            @RequestParam(required = false) String area,
+            @RequestParam("media") List<MultipartFile> mediaFiles
+    ) {
+        return postService.createWithMedia(
+                userId, title, content, category, area, mediaFiles
+        );
+    }
+
 
 }

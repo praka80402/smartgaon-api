@@ -1,5 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,5 +37,13 @@ public interface ForumPostService {
             String category,
             String area,
             MultipartFile image
+    );
+    ForumPostResponse createWithMedia(
+            Long userId,
+            String title,
+            String content,
+            String category,
+            String area,
+            List<MultipartFile> mediaFiles
     );
 }
