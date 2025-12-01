@@ -2,11 +2,11 @@ package com.smartgaon.ai.smartgaon_api.gaontalent.Repository;
 
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentVideoComment;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 
 public interface TalentVideoCommentRepository extends JpaRepository<TalentVideoComment, Long> {
 
-    List<TalentVideoComment> findByVideoIdOrderByCreatedAtDesc(String videoId);
+    Page<TalentVideoComment> findByVideoIdOrderByCreatedAtDesc(String videoId, Pageable pageable);
 }
 

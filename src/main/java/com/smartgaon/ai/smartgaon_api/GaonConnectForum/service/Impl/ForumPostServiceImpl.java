@@ -3,6 +3,7 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.Impl;
 
 import java.util.Base64;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,76 +34,6 @@ public class ForumPostServiceImpl implements ForumPostService {
 
     @Autowired
     private UserRepository userRepo;
-
-
-//    private ForumPostResponse map(ForumPost p) {
-//
-//        String fullName = (p.getUser().getFirstName() == null ? "" : p.getUser().getFirstName())
-//                + " " +
-//                (p.getUser().getLastName() == null ? "" : p.getUser().getLastName());
-//        fullName = fullName.trim();
-//
-//        // Convert profile image bytes → base64 string
-//        byte[] imgBytes = p.getUser().getProfileImage();
-//        String profileImageBase64 = null;
-//        if (imgBytes != null && imgBytes.length > 0) {
-//            profileImageBase64 = Base64.getEncoder().encodeToString(imgBytes);
-//        }
-//
-//        return new ForumPostResponse(
-//                p.getPostId(),
-//                p.getUser().getId(),
-//                fullName,
-//                p.getTitle(),
-//                p.getContent(),
-//                p.getCategory(),
-//                p.getArea(),                 // ✅ area in correct place
-//                profileImageBase64,          // ✅ now image in correct place (String)
-//                p.getMediaAttachments(),
-//                p.getLikeCount(),
-//                
-//                p.getCommentCount(),
-//                p.getStatus().name(),
-//                p.getCreatedAt(),
-//                p.getUpdatedAt()
-//        );
-//    }
-
-//    private ForumPostResponse map(ForumPost p) {
-//
-//        String fullName = (p.getUser().getFirstName() == null ? "" : p.getUser().getFirstName())
-//                + " " +
-//                (p.getUser().getLastName() == null ? "" : p.getUser().getLastName());
-//        fullName = fullName.trim();
-//
-//        // Convert profile image bytes → base64 string
-//        byte[] imgBytes = p.getUser().getProfileImage();
-//        String profileImageBase64 = null;
-//        if (imgBytes != null && imgBytes.length > 0) {
-//            profileImageBase64 = Base64.getEncoder().encodeToString(imgBytes);
-//        }
-//
-//        return new ForumPostResponse(
-//                p.getPostId(),
-//                p.getUser().getId(),
-//                fullName,
-//                p.getTitle(),
-//                p.getContent(),
-//                p.getCategory(),
-//                p.getArea(),
-//                profileImageBase64,
-//                p.getMediaAttachments(),
-//                p.getLikeCount(),
-//                p.getCommentCount(),
-//                p.getStatus().name(),
-//
-//                // ✅ VERY IMPORTANT — SEND LIKED USERS LIST TO FRONTEND
-////                p.getLikedUsers(),   
-//
-//                p.getCreatedAt(),
-//                p.getUpdatedAt()
-//        );
-//    }  
 
    private ForumPostResponse map(ForumPost p) {
 
@@ -192,13 +123,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         return map(postRepo.save(post));
     }
 
-//    @Override
-//    @Transactional
-//    public ForumPostResponse like(Long postId) {
-//        ForumPost post = postRepo.findById(postId).orElseThrow();
-//        post.setLikeCount(post.getLikeCount() + 1);
-//        return map(postRepo.save(post));
-//    }
+
 
     @Override
     @Transactional
@@ -269,6 +194,43 @@ public class ForumPostServiceImpl implements ForumPostService {
         postRepo.save(post);
         return map(post);
     }
+    
+    @Override
+    @Transactional
+    public ForumPostResponse createWithMedia(
+            Long userId,
+            String title,
+            String content,
+            String category,
+            String area,
+            List<MultipartFile> files
+    ) {
+
+        if (files.size() > 5) {
+            throw new RuntimeException("Maximum 5 media files allowed");
+        }
+
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ForumPost post = new ForumPost();
+        post.setUser(user);
+        post.setTitle(title);
+        post.setContent(content);
+        post.setCategory(category);
+        post.setArea(area);
+
+        // Upload each file to Cloudinary
+        for (MultipartFile file : files) {
+            String url = cloudinaryService.uploadFile(file);
+            post.getMediaAttachments().add(url);
+        }
+
+        return map(postRepo.save(post));
+    }
+
+    
+    
 
 
 }

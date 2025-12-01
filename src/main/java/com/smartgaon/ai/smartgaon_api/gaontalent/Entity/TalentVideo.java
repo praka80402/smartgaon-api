@@ -16,6 +16,8 @@ public class TalentVideo {
     private String title;
     private String url;           // Cloudinary URL
     private String uploadedBy;
+    private String profileImageUrl;
+
 
     private boolean isReel;       // true = reel (max 60 sec), false = long video (max 5 min)
     private long fileSize;       

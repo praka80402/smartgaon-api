@@ -32,17 +32,18 @@ public class CommentServiceImpl implements ForumCommentService {
 
     private CommentResponse map(ForumComment c) {
         String fullName = c.getUser().getFirstName() + " " + c.getUser().getLastName();
+       
 
         return new CommentResponse(
                 c.getCommentId(),
                 c.getPost().getPostId(),
                 c.getUser().getId(),
                 fullName,
-                
                 c.getContent(),
                 c.getLikeCount(),
                 c.getStatus().name(),
-                c.getCreatedAt()
+                c.getCreatedAt(),
+               c.getUser().getProfileImageUrl()
         );
     }
 

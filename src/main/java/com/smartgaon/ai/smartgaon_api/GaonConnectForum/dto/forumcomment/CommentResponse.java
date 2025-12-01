@@ -1,7 +1,5 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumcomment;
 
-
-
 import java.time.Instant;
 
 public record CommentResponse(
@@ -12,7 +10,7 @@ public record CommentResponse(
         String content,
         Long likeCount,
         String status,
-        Instant createdAt
-//        String profileImage
+        Instant createdAt,
+        String profileImageUrl
 ) {}
 

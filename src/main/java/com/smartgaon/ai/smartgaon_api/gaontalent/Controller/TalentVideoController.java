@@ -40,8 +40,7 @@ public class TalentVideoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Page<TalentVideo> videos = service.getPaginatedVideos(page, size);
-        return ResponseEntity.ok(videos);
+        return ResponseEntity.ok(service.getPaginatedVideos(page, size));
     }
 
     // -------------- LIKE ------------------------
@@ -82,10 +81,14 @@ public class TalentVideoController {
 //        return ResponseEntity.ok(service.getComments(id));
 //    }
     @GetMapping("/{id}/comments")
-    public ResponseEntity<?> getComments(@PathVariable String id) {
-        return ResponseEntity.ok(service.getComments(id));
+    public ResponseEntity<?> getComments(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(service.getComments(id, page, size));
     }
-    
+
     // -------------- SHARE ------------------------
     @PostMapping("/{id}/share")
     public ResponseEntity<?> share(@PathVariable String id) {
