@@ -8,5 +8,7 @@ import org.springframework.data.domain.Page;
 public interface TalentVideoCommentRepository extends JpaRepository<TalentVideoComment, Long> {
 
     Page<TalentVideoComment> findByVideoIdOrderByCreatedAtDesc(String videoId, Pageable pageable);
+    void deleteByVideoId(String videoId);
+
 }
 

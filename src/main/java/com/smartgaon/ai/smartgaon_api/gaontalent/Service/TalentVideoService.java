@@ -2,6 +2,7 @@
 
 package com.smartgaon.ai.smartgaon_api.gaontalent.Service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.cloudinary.CloudinaryService;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentVideo;
@@ -204,6 +205,39 @@ public class TalentVideoService {
             return dto;
         });
     }
+    
+    @Transactional
+    public TalentVideo editVideo(String videoId, String newTitle, MultipartFile file) throws Exception {
+
+        TalentVideo video = repository.findById(videoId)
+                .orElseThrow(() -> new Exception("Video not found"));
+
+        video.setTitle(newTitle);
+
+        return repository.save(video);
+    }
+
+    
+
+@Transactional
+public void deleteVideo(String videoId) throws Exception {
+
+    TalentVideo video = repository.findById(videoId)
+            .orElseThrow(() -> new Exception("Video not found"));
+
+  
+    likeRepository.deleteByVideoId(videoId);
+
+  
+    commentRepository.deleteByVideoId(videoId);
+
+    // finally delete video
+    repository.delete(video);
+}
+
+
+
+
 
 }
 

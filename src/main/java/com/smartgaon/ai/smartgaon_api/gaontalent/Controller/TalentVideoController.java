@@ -2,6 +2,8 @@ package com.smartgaon.ai.smartgaon_api.gaontalent.Controller;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -75,11 +77,7 @@ public class TalentVideoController {
         return ResponseEntity.ok(service.addComment(id, userId, text));
     }
     
-// // GET COMMENTS
-//    @GetMapping("/{id}/comments")
-//    public ResponseEntity<?> getComments(@PathVariable String id) {
-//        return ResponseEntity.ok(service.getComments(id));
-//    }
+
     @GetMapping("/{id}/comments")
     public ResponseEntity<?> getComments(
             @PathVariable String id,
@@ -95,5 +93,32 @@ public class TalentVideoController {
         service.shareVideo(id);
         return ResponseEntity.ok("Shared");
     }
+    
+ // -------------- EDIT VIDEO -----------------
+    @PutMapping("/{id}/edit")
+    public ResponseEntity<?> editVideo(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body
+    ) {
+        try {
+            String title = body.get("title");
+            return ResponseEntity.ok(service.editVideo(id, title, null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+    // -------------- DELETE VIDEO -----------------
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<?> deleteVideo(@PathVariable String id) {
+        try {
+            service.deleteVideo(id);
+            return ResponseEntity.ok("Video deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
 
