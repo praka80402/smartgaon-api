@@ -10,6 +10,8 @@ public interface TalentVideoLikeRepository extends JpaRepository<TalentVideoLike
     Optional<TalentVideoLike> findByUserIdAndVideoId(Long userId, String videoId);
 
     int countByVideoId(String videoId);
+    void deleteByVideoId(String videoId);
+
     
     void deleteByUserIdAndVideoId(Long userId, String videoId);
 }
