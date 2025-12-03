@@ -5,6 +5,7 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectCommunity.service.NewsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/community/news")
@@ -32,4 +33,12 @@ public class NewsController {
     public ResponseEntity<?> getNewsById(@PathVariable Long id) {
         return ResponseEntity.ok(newsService.getNewsById(id));
     }
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    public ResponseEntity<?> createNews(
+            @RequestPart("news") News news,
+            @RequestPart(value = "thumbnail", required = false) MultipartFile file
+    ) {
+        return ResponseEntity.ok(newsService.createNewsWithImage(news, file));
+    }
+
 }
