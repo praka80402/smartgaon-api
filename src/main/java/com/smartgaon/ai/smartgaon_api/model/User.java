@@ -38,29 +38,26 @@ public class User {
     @Column(name = "reset_token")
     private String resetToken;
 
-    // -----------------------------
-    // LOCATION FIELDS
-    // -----------------------------
-    @Column(length = 20)
-    private String village;
+    @Column(length = 30)
+    private String state;
+
+    @Column(length = 30)
+    private String district;
+
+    @Column(length = 50)
+    private String area;
 
     @Column(length = 6)
     private String pincode;
 
-    // -----------------------------
-    // ROLES (String ✅)
-    // -----------------------------
     @Column(length = 20)
     private String roles;
+
     private String occupation;
 
     @Column(length = 1000)
     private String note;
 
-
-    // -----------------------------
-    // IMAGE (CLOUDINARY)
-    // -----------------------------
     @Column(name = "profile_image_url", length = 1000)
     private String profileImageUrl;
 

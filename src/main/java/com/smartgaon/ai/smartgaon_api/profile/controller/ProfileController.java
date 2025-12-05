@@ -1,153 +1,3 @@
-//package com.smartgaon.ai.smartgaon_api.profile.controller;
-//
-//import com.cloudinary.Cloudinary;
-//import com.cloudinary.utils.ObjectUtils;
-//import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
-//import com.smartgaon.ai.smartgaon_api.model.User;
-//
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.http.ResponseEntity;
-//import org.springframework.web.bind.annotation.*;
-//import org.springframework.web.multipart.MultipartFile;
-//
-//import java.util.Optional;
-//import java.util.Map;
-//
-//@RestController
-//@RequestMapping("/api/profile")
-//public class ProfileController {
-//
-//    @Autowired
-//    private UserRepository userRepository;
-//
-//    @Autowired
-//    private Cloudinary cloudinary;
-//
-//    // ------------------------------------------
-//    // GET PROFILE BY PHONE
-//    // ------------------------------------------
-//    @GetMapping("/{phone}")
-//    public ResponseEntity<?> getProfile(@PathVariable String phone) {
-//
-//        Optional<User> userOpt = userRepository.findByPhone(phone);
-//        if (userOpt.isEmpty()) {
-//            return ResponseEntity.status(404).body("User not found");
-//        }
-//
-//        User user = userOpt.get();
-//
-//        String fullName =
-//                (user.getFirstName() == null ? "" : user.getFirstName()) + " " +
-//                (user.getLastName() == null ? "" : user.getLastName());
-//
-//        return ResponseEntity.ok(
-//        	    Map.ofEntries(
-//        	            Map.entry("id", user.getId()),
-//        	            Map.entry("firstName", user.getFirstName()),
-//        	            Map.entry("lastName", user.getLastName()),
-//        	            Map.entry("fullName", fullName.trim()),
-//        	            Map.entry("phone", user.getPhone()),
-//        	            Map.entry("email", user.getEmail()),
-//        	            Map.entry("roles", user.getRoles()),
-//        	            Map.entry("pincode", user.getPincode()),
-//        	            Map.entry("village", user.getVillage()),
-//        	            Map.entry("profileImageUrl",
-//                                user.getProfileImageUrl() == null ? "" : user.getProfileImageUrl()),
-//                        Map.entry("profileCompleted", user.isProfileCompleted())
-////        	            Map.entry("profileImageUrl", user.getProfileImageUrl()),
-////        	            Map.entry("profileCompleted", user.isProfileCompleted())
-//        	    )
-//        	);
-//
-//    }
-//
-//    // ------------------------------------------
-//    // UPDATE PROFILE
-//    // ------------------------------------------
-//    @PutMapping("/update")
-//    public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
-//
-//        Optional<User> userOpt = userRepository.findByPhone(updatedUser.getPhone());
-//        if (userOpt.isEmpty()) {
-//            return ResponseEntity.status(404).body("User not found");
-//        }
-//
-//        User user = userOpt.get();
-//
-//        user.setFirstName(updatedUser.getFirstName());
-//        user.setLastName(updatedUser.getLastName());
-//        user.setPincode(updatedUser.getPincode());
-//        user.setVillage(updatedUser.getVillage());
-//        user.setRoles(updatedUser.getRoles());
-//        user.setProfileCompleted(true);
-//
-//        userRepository.save(user);
-//
-//        return ResponseEntity.ok(
-//                Map.of(
-//                        "message", "Profile updated successfully",
-//                        "user", user
-//                )
-//        );
-//    }
-//
-//    // ------------------------------------------
-//    // UPLOAD IMAGE TO CLOUDINARY
-//    // ------------------------------------------
-//    @PostMapping("/upload-image/{phone}")
-//    public ResponseEntity<?> uploadImage(
-//            @PathVariable String phone,
-//            @RequestParam("file") MultipartFile file) {
-//
-//        try {
-//            Optional<User> userOpt = userRepository.findByPhone(phone);
-//            if (userOpt.isEmpty()) {
-//                return ResponseEntity.status(404).body("User not found");
-//            }
-//
-//            User user = userOpt.get();
-//
-//            Map<?, ?> uploadResult = cloudinary.uploader().upload(
-//                    file.getBytes(),
-//                    ObjectUtils.asMap("folder", "user_profiles")
-//            );
-//
-//            Object secureUrl = uploadResult.get("secure_url");
-//
-//            user.setProfileImageUrl(secureUrl.toString());
-//            userRepository.save(user);
-//
-//            return ResponseEntity.ok(
-//                    Map.of(
-//                            "message", "Profile image uploaded successfully!",
-//                            "url", secureUrl.toString()
-//                    )
-//            );
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(500).body("Error uploading image: " + e.getMessage());
-//        }
-//    }
-//
-//    // ------------------------------------------
-//    // GET IMAGE URL
-//    // ------------------------------------------
-//    @GetMapping("/image/{phone}")
-//    public ResponseEntity<?> getProfileImage(@PathVariable String phone) {
-//
-//        Optional<User> userOpt = userRepository.findByPhone(phone);
-//
-//        if (userOpt.isEmpty() || userOpt.get().getProfileImageUrl() == null) {
-//            return ResponseEntity.status(404).body("No profile image found");
-//        }
-//
-//        return ResponseEntity.ok(
-//                Map.of("url", userOpt.get().getProfileImageUrl())
-//        );
-//    }
-//}
-
-
 package com.smartgaon.ai.smartgaon_api.profile.controller;
 
 import com.cloudinary.Cloudinary;
@@ -159,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -172,7 +23,9 @@ public class ProfileController {
     @Autowired
     private Cloudinary cloudinary;
 
-    // ✅ GET PROFILE
+    // ============================================
+    // GET PROFILE
+    // ============================================
     @GetMapping("/{phone}")
     public ResponseEntity<?> getProfile(@PathVariable String phone) {
 
@@ -182,30 +35,28 @@ public class ProfileController {
         }
 
         User user = userOpt.get();
+        Map<String, Object> response = new HashMap<>();
 
-        String firstName = user.getFirstName() == null ? "" : user.getFirstName();
-        String lastName = user.getLastName() == null ? "" : user.getLastName();
-        String fullName = (firstName + " " + lastName).trim();
-
-        Map<String, Object> response = new java.util.HashMap<>();
-
-        response.put("id", user.getId() == null ? 0 : user.getId());
-        response.put("firstName", firstName);
-        response.put("lastName", lastName);
-        response.put("fullName", fullName);
-        response.put("phone", user.getPhone() == null ? "" : user.getPhone());
-        response.put("roles", user.getRoles() == null ? "" : user.getRoles());
-        response.put("pincode", user.getPincode() == null ? "" : user.getPincode());
-        response.put("village", user.getVillage() == null ? "" : user.getVillage());
-        response.put("profileImageUrl", user.getProfileImageUrl() == null ? "" : user.getProfileImageUrl());
+        response.put("id", user.getId());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("fullName", (user.getFirstName() + " " + user.getLastName()).trim());
+        response.put("phone", user.getPhone());
+        response.put("email", user.getEmail());
+        response.put("roles", user.getRoles());
+        response.put("state", user.getState());
+        response.put("district", user.getDistrict());
+        response.put("area", user.getArea());
+        response.put("pincode", user.getPincode());
+        response.put("profileImageUrl", user.getProfileImageUrl());
         response.put("profileCompleted", user.isProfileCompleted());
 
         return ResponseEntity.ok(response);
     }
 
-
-
-    // ✅ UPDATE PROFILE (MANDATORY FIELDS)
+    // ============================================
+    // UPDATE PROFILE
+    // ============================================
     @PutMapping("/update")
     public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
 
@@ -216,32 +67,39 @@ public class ProfileController {
 
         User user = userOpt.get();
 
-        // ✅ Save values
         user.setFirstName(updatedUser.getFirstName());
         user.setLastName(updatedUser.getLastName());
         user.setRoles(updatedUser.getRoles());
+        user.setState(updatedUser.getState());
+        user.setDistrict(updatedUser.getDistrict());
+        user.setArea(updatedUser.getArea());
         user.setPincode(updatedUser.getPincode());
-        user.setVillage(updatedUser.getVillage());
 
-        // ✅ Mark profile completed only when mandatory fields are filled
+        // Profile completion logic
         boolean completed =
-                user.getFirstName() != null && !user.getFirstName().isBlank() &&
-                user.getLastName() != null && !user.getLastName().isBlank() &&
-                user.getPincode() != null && !user.getPincode().isBlank() &&
-                user.getVillage() != null && !user.getVillage().isBlank() &&
-                user.getProfileImageUrl() != null && !user.getProfileImageUrl().isBlank();
+                notEmpty(user.getFirstName()) &&
+                notEmpty(user.getLastName()) &&
+                notEmpty(user.getState()) &&
+                notEmpty(user.getDistrict()) &&
+                notEmpty(user.getArea()) &&
+                notEmpty(user.getPincode()) &&
+                notEmpty(user.getProfileImageUrl());
 
         user.setProfileCompleted(completed);
 
         userRepository.save(user);
 
-        return ResponseEntity.ok(Map.of(
-                "message", "Profile updated",
-                "profileCompleted", completed
-        ));
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "Profile updated successfully",
+                        "profileCompleted", completed
+                )
+        );
     }
 
-    // ✅ UPLOAD IMAGE TO CLOUDINARY
+    // ============================================
+    // UPLOAD PROFILE IMAGE
+    // ============================================
     @PostMapping("/upload-image/{phone}")
     public ResponseEntity<?> uploadImage(
             @PathVariable String phone,
@@ -260,20 +118,17 @@ public class ProfileController {
                     ObjectUtils.asMap("folder", "user_profiles")
             );
 
-            Object secureUrl = uploadResult.get("secure_url");
-            if (secureUrl == null) {
-                return ResponseEntity.status(500).body("Failed to upload image");
-            }
+            String secureUrl = uploadResult.get("secure_url").toString();
+            user.setProfileImageUrl(secureUrl);
 
-            user.setProfileImageUrl(secureUrl.toString());
-
-            // ✅ Recalculate profile completion
             boolean completed =
-                    user.getFirstName() != null && !user.getFirstName().isBlank() &&
-                            user.getLastName() != null && !user.getLastName().isBlank() &&
-                            user.getPincode() != null && !user.getPincode().isBlank() &&
-                            user.getVillage() != null && !user.getVillage().isBlank() &&
-                            user.getProfileImageUrl() != null && !user.getProfileImageUrl().isBlank();
+                    notEmpty(user.getFirstName()) &&
+                    notEmpty(user.getLastName()) &&
+                    notEmpty(user.getState()) &&
+                    notEmpty(user.getDistrict()) &&
+                    notEmpty(user.getArea()) &&
+                    notEmpty(user.getPincode()) &&
+                    notEmpty(user.getProfileImageUrl());
 
             user.setProfileCompleted(completed);
 
@@ -282,18 +137,20 @@ public class ProfileController {
             return ResponseEntity.ok(
                     Map.of(
                             "message", "Profile image uploaded successfully!",
-                            "url", secureUrl.toString(),
+                            "url", secureUrl,
                             "profileCompleted", completed
                     )
             );
 
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).body("Error uploading image: " + e.getMessage());
+            return ResponseEntity.status(500).body("Image upload failed: " + e.getMessage());
         }
     }
 
-    // ✅ GET IMAGE URL
+    // ============================================
+    // GET PROFILE IMAGE
+    // ============================================
     @GetMapping("/image/{phone}")
     public ResponseEntity<?> getProfileImage(@PathVariable String phone) {
 
@@ -303,14 +160,11 @@ public class ProfileController {
             return ResponseEntity.status(404).body("No profile image found");
         }
 
-        return ResponseEntity.ok(Map.of(
-                "url", userOpt.get().getProfileImageUrl()
-        ));
+        return ResponseEntity.ok(Map.of("url", userOpt.get().getProfileImageUrl()));
+    }
+
+    // Utility method
+    private boolean notEmpty(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
-
-
-
-
-
-
