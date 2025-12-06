@@ -19,7 +19,8 @@ public class WebConfig implements WebMvcConfigurer {
 
         registry.addMapping("/**")
                 .allowedOriginPatterns(
-                        "https://*.vercel.app"   // ✅ allows all Vercel preview + production URLs
+                		"*"
+//                        "https://*.vercel.app"   // ✅ allows all Vercel preview + production URLs
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")

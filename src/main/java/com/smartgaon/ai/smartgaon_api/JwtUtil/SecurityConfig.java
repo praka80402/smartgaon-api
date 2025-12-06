@@ -5,14 +5,21 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import lombok.RequiredArgsConstructor;
+
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class SecurityConfig {
+	
+	
+	private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception {
@@ -24,7 +31,8 @@ public class SecurityConfig {
                     
                     // IMPORTANT: allow all Vercel domains
                     config.setAllowedOriginPatterns(List.of(
-                        "https://*.vercel.app"        // All Vercel URLs
+                    		"*"
+//                        "https://*.vercel.app"        // All Vercel URLs
                     ));
 
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -36,11 +44,29 @@ public class SecurityConfig {
                 }))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/community/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/pdf/**").permitAll()
+                        // 1️⃣ Public Admin login/register
+                        .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
+
+                        // 2️⃣ Public user access
+                        .requestMatchers(HttpMethod.GET, "/api/community/events/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/community/news/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/uploads/**", "/api/pdf/**").permitAll()
+
+                        // 3️⃣ Admin-only endpoints (must be ABOVE /api/admin/**)
+                        .requestMatchers("/api/admin/users/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/community/events/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/community/events/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/community/news/**").hasAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/community/news/**").hasAuthority("ADMIN")
+
+                        // 4️⃣ Protect all other admin URLs
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+
+                        // 5️⃣ Allow all remaining endpoints
                         .anyRequest().permitAll()
-                );
+                )
+
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
