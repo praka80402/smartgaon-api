@@ -43,27 +43,33 @@ public class SecurityConfig {
                     return config;
                 }))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+//                .authorizeHttpRequests(auth -> auth
+//                        // 1️⃣ Public Admin login/register
+//                        .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
+//
+//                        // 2️⃣ Public user access
+//                        .requestMatchers(HttpMethod.GET, "/api/community/events/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/community/news/**").permitAll()
+//                        .requestMatchers("/api/auth/**", "/uploads/**", "/api/pdf/**").permitAll()
+//
+//                        // 3️⃣ Admin-only endpoints (must be ABOVE /api/admin/**)
+//                        .requestMatchers("/api/admin/users/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.POST, "/api/community/events/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/community/events/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.POST, "/api/community/news/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/community/news/**").hasAuthority("ADMIN")
+//
+//                        // 4️⃣ Protect all other admin URLs
+//                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+//
+//                        // 5️⃣ Allow all remaining endpoints
+//                        .anyRequest().permitAll()
                 .authorizeHttpRequests(auth -> auth
-                        // 1️⃣ Public Admin login/register
-                        .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
-
-                        // 2️⃣ Public user access
-                        .requestMatchers(HttpMethod.GET, "/api/community/events/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/community/news/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/uploads/**", "/api/pdf/**").permitAll()
-
-                        // 3️⃣ Admin-only endpoints (must be ABOVE /api/admin/**)
-                        .requestMatchers("/api/admin/users/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/community/events/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/community/events/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/community/news/**").hasAuthority("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/community/news/**").hasAuthority("ADMIN")
-
-                        // 4️⃣ Protect all other admin URLs
-                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
-
-                        // 5️⃣ Allow all remaining endpoints
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/community/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/pdf/**").permitAll()
                         .anyRequest().permitAll()
+                
                 )
 
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
