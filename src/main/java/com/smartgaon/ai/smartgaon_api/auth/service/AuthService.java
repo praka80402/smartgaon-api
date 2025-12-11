@@ -205,4 +205,8 @@ public class AuthService {
 
         return false;
     }
+    public List<User> getAllUsers() {
+        return repo.findAll();
+    }
+
 }
