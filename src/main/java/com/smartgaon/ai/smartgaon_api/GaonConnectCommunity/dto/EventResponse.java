@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -16,7 +17,7 @@ public class EventResponse {
     private LocalDateTime endDateTime;
     private String location;
     private String contactInfo;
-    private String pictureUrl;
+    private List<String> imageUrls;
     private LocalDateTime createdAt;
 }
 
