@@ -1,15 +1,19 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobs;
 
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class JobServiceImpl implements JobService {
 
     private final JobRepository repo;
+    private final JobApplicationRepository applicationRepository;
 
-    public JobServiceImpl(JobRepository repo) {
+    public JobServiceImpl(JobRepository repo, final JobApplicationRepository applicationRepository) {
         this.repo = repo;
+        this.applicationRepository = applicationRepository;
     }
 
     @Override
@@ -48,5 +52,50 @@ public class JobServiceImpl implements JobService {
     @Override
     public List<Job> getAll() {
         return repo.findAll();
+    }
+
+
+    @Override
+    public void applyJob(Long jobId, Long applicantId) {
+
+        if (applicationRepository.existsByJobIdAndApplicantId(jobId, applicantId)) {
+            throw new RuntimeException("Already applied for this job");
+        }
+
+        Job job = repo.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        JobApplication app = new JobApplication();
+        app.setJobId(jobId);
+        app.setApplicantId(applicantId);
+        app.setEmployerId(job.getEmployerId());
+        app.setStatus("PENDING");
+        app.setAppliedAt(LocalDateTime.now());
+
+        applicationRepository.save(app);
+    }
+
+    @Override
+    public List<JobApplicantResponse> getApplicants(Long jobId) {
+        return applicationRepository.findApplicantsByJobId(jobId);
+    }
+
+    @Override
+    public List<JobApplication> getAppliedJobs(Long applicantId) {
+        return applicationRepository.findByApplicantId(applicantId);
+    }
+
+    @Override
+    public void updateApplicationStatus(Long applicationId, String status) {
+        JobApplication app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        app.setStatus(status);
+        applicationRepository.save(app);
+    }
+
+    @Override
+    public List<Job> getJobsByEmployer(Long employerId) {
+        return repo.findByEmployerId(employerId);
     }
 }

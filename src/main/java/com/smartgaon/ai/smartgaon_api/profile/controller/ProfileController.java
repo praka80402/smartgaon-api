@@ -54,6 +54,18 @@ public class ProfileController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/id/{id}")
+    public ResponseEntity<?> getProfileById(@PathVariable Long id) {
+
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("User not found");
+        }
+
+        return ResponseEntity.ok(buildProfileResponse(userOpt.get()));
+    }
+
+
     // ============================================
     // UPDATE PROFILE
     // ============================================
@@ -167,4 +179,27 @@ public class ProfileController {
     private boolean notEmpty(String value) {
         return value != null && !value.trim().isEmpty();
     }
+
+
+    private Map<String, Object> buildProfileResponse(User user) {
+        Map<String, Object> response = new HashMap<>();
+
+        response.put("id", user.getId());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("fullName",
+                (user.getFirstName() + " " + user.getLastName()).trim());
+        response.put("phone", user.getPhone());
+        response.put("email", user.getEmail());
+        response.put("roles", user.getRoles());
+        response.put("state", user.getState());
+        response.put("district", user.getDistrict());
+        response.put("area", user.getArea());
+        response.put("pincode", user.getPincode());
+        response.put("profileImageUrl", user.getProfileImageUrl());
+        response.put("profileCompleted", user.isProfileCompleted());
+
+        return response;
+    }
+
 }

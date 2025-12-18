@@ -8,4 +8,16 @@ public interface JobService {
     void delete(Long id);
     Job get(Long id);
     List<Job> getAll();
+    void applyJob(Long jobId, Long applicantId);
+
+    List<JobApplicantResponse> getApplicants(Long jobId);
+
+    List<JobApplication> getAppliedJobs(Long applicantId);
+
+    void updateApplicationStatus(Long applicationId, String status);
+
+    List<Job> getJobsByEmployer(Long employerId);
+
+
+
 }
