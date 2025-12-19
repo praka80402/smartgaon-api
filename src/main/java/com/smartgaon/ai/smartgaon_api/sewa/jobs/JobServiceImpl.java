@@ -59,7 +59,7 @@ public class JobServiceImpl implements JobService {
     public void applyJob(Long jobId, Long applicantId) {
 
         if (applicationRepository.existsByJobIdAndApplicantId(jobId, applicantId)) {
-            throw new RuntimeException("Already applied for this job");
+            throw new AlreadyAppliedException("Already applied for this job");
         }
 
         Job job = repo.findById(jobId)
@@ -98,4 +98,23 @@ public class JobServiceImpl implements JobService {
     public List<Job> getJobsByEmployer(Long employerId) {
         return repo.findByEmployerId(employerId);
     }
+    @Override
+    public void updateApplicationStatus(
+            Long applicationId,
+            String status,
+            Long employerId
+    ) {
+        JobApplication application = applicationRepository
+                .findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        // 🔐 Security check: employer owns this job
+        if (!application.getEmployerId().equals(employerId)) {
+            throw new RuntimeException("Unauthorized action");
+        }
+
+        application.setStatus(status);
+        applicationRepository.save(application);
+    }
+
 }

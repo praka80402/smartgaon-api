@@ -81,4 +81,15 @@ public class JobController {
         service.updateApplicationStatus(applicationId, status);
         return ResponseEntity.ok("Status updated");
     }
+
+    @PutMapping("/employer/applications/{applicationId}/status")
+    public ResponseEntity<?> updateApplicationStatus(
+            @PathVariable Long applicationId,
+            @RequestParam String status,
+            @RequestParam Long employerId) {
+
+        service.updateApplicationStatus(applicationId, status, employerId);
+        return ResponseEntity.ok("Status updated");
+    }
+
 }

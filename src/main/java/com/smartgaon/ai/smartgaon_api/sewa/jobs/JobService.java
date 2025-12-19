@@ -18,6 +18,10 @@ public interface JobService {
 
     List<Job> getJobsByEmployer(Long employerId);
 
-
+    void updateApplicationStatus(
+            Long applicationId,
+            String status,
+            Long employerId
+    );
 
 }
