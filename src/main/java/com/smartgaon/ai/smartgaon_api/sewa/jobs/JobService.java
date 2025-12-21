@@ -18,6 +18,11 @@ public interface JobService {
 
     List<Job> getJobsByEmployer(Long employerId);
 
-
+    void updateApplicationStatus(
+            Long jobId,
+            Long applicantId,
+            String status
+    );
+    void closeJob(Long jobId, Long employerId);
 
 }

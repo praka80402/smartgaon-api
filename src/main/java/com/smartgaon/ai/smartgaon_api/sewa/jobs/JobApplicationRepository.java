@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface JobApplicationRepository
         extends JpaRepository<JobApplication, Long> {
@@ -30,7 +31,12 @@ public interface JobApplicationRepository
 
     List<JobApplication> findByApplicantId(Long applicantId);
 
-
-
     long countByJobId(Long jobId);
+
+    Optional<JobApplication> findByJobIdAndApplicantId(
+            Long jobId,
+            Long applicantId
+    );
+
+    Optional<JobApplication> findById(Long id);
 }

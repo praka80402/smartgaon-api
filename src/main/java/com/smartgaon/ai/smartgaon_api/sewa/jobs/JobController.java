@@ -81,4 +81,24 @@ public class JobController {
         service.updateApplicationStatus(applicationId, status);
         return ResponseEntity.ok("Status updated");
     }
+
+    @PutMapping("/applications/status")
+    public ResponseEntity<?> updateApplicationStatus(
+            @RequestParam Long jobId,
+            @RequestParam Long applicantId,
+            @RequestParam String status
+    ) {
+        service.updateApplicationStatus(jobId, applicantId, status);
+        return ResponseEntity.ok("Application status updated successfully");
+    }
+
+    @PutMapping("/employer/{jobId}/close")
+    public ResponseEntity<?> closeJob(
+            @PathVariable Long jobId,
+            @RequestParam Long employerId
+    ) {
+        service.closeJob(jobId, employerId);
+        return ResponseEntity.ok("Job closed successfully");
+    }
+
 }

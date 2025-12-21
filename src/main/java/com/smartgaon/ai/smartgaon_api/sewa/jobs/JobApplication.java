@@ -1,7 +1,10 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobs;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -31,7 +34,8 @@ public class JobApplication {
     @Column(name = "employer_id", nullable = false)
     private Long employerId;
 
-    private String status; // PENDING / ACCEPTED / REJECTED
+    private String status;
 
     private LocalDateTime appliedAt;
 }
+
