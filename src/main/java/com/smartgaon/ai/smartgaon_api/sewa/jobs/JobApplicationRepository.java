@@ -39,4 +39,9 @@ public interface JobApplicationRepository
     );
 
     Optional<JobApplication> findById(Long id);
+
+    List<JobApplication> findByEmployerIdAndStatus(
+            Long employerId,
+            String status
+    );
 }
