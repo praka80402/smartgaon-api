@@ -6,13 +6,13 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class TalentVideoComment {
+public class TalentComment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String videoId;
+    private Long entryId;
     private Long userId;
     private String username;
 
@@ -21,3 +21,4 @@ public class TalentVideoComment {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 }
+
