@@ -3,6 +3,8 @@ package com.smartgaon.ai.smartgaon_api.gaontalent.Entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Data
@@ -23,12 +25,16 @@ public class TalentEntry {
     @Enumerated(EnumType.STRING)
     private TalentCategory category;
 
+    private boolean isCompetition = false;
     private Long competitionId;   // Knowing which competition user participated in
 
     private String referenceNumber;
 
-    private int likes = 0;
-    private int comments = 0;
+    private Integer comments = 0;
+    private Integer likes = 0;
+
+ 
+
 
     private boolean isWinner = false;
 

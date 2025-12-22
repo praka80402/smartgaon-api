@@ -23,13 +23,14 @@ public class TalentEntryController {
             @RequestParam int age,
             @RequestParam String phone,
             @RequestParam TalentCategory category,
-            @RequestParam Long competitionId,
+            @RequestParam(required = false) Long competitionId,
+            @RequestParam boolean isCompetition,
             @RequestParam MultipartFile profileImage,
             @RequestParam MultipartFile media
     ) throws Exception {
 
         return ResponseEntity.ok(
-                service.participate(name, age, phone, category, competitionId, profileImage, media)
+                service.participate(name, age, phone, category, competitionId,isCompetition, profileImage, media)
         );
     }
 

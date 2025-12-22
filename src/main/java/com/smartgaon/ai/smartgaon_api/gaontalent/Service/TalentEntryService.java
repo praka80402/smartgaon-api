@@ -29,12 +29,19 @@ public class TalentEntryService {
             String phone,
             TalentCategory category,
             Long competitionId,
+            boolean isCompetition,
             MultipartFile profileImage,
             MultipartFile media
     ) throws Exception {
 
-        compRepo.findById(competitionId)
-                .orElseThrow(() -> new Exception("Invalid competition"));
+        if (isCompetition) {
+            if (competitionId == null) {
+                throw new Exception("Competition ID is required.");
+            }
+
+            compRepo.findById(competitionId)
+                    .orElseThrow(() -> new Exception("Invalid competition"));
+        }
 
         String ext = getExt(media);
 
@@ -52,7 +59,10 @@ public class TalentEntryService {
         entry.setAge(age);
         entry.setPhone(phone);
         entry.setCategory(category);
-        entry.setCompetitionId(competitionId);
+
+        entry.setCompetition(isCompetition);   // NEW
+        entry.setCompetitionId(isCompetition ? competitionId : null);
+
         entry.setProfileImageUrl(profileUrl);
         entry.setMediaUrl(mediaUrl);
         entry.setMediaType(ext);
@@ -64,6 +74,7 @@ public class TalentEntryService {
 
         return "Thank you for participating! Your reference number is: " + ref;
     }
+
 
     private String getExt(MultipartFile file) {
         String name = file.getOriginalFilename();

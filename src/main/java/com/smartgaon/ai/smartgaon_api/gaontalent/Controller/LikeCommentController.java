@@ -14,16 +14,16 @@ public class LikeCommentController {
 
     private final LikeAndCommentService service;
 
-    /* ---------------- LIKE ---------------- */
+    /* ===== LIKE POST ===== */
     @PostMapping("/like/{entryId}")
     public ResponseEntity<?> like(
             @PathVariable Long entryId,
-            @RequestParam Long userId   // <-- frontend must send this
+            @RequestParam Long userId
     ) {
-        return ResponseEntity.ok(service.like(entryId, userId));
+        return ResponseEntity.ok(service.addLike(entryId, userId));
     }
 
-    /* ---------------- COMMENT ---------------- */
+    /* ===== ADD COMMENT ===== */
     @PostMapping("/comment/{entryId}")
     public ResponseEntity<?> comment(
             @PathVariable Long entryId,
@@ -31,5 +31,20 @@ public class LikeCommentController {
             @RequestParam String text
     ) {
         return ResponseEntity.ok(service.addComment(entryId, userId, text));
+    }
+
+    /* ===== GET COMMENTS ===== */
+    @GetMapping("/comment/{entryId}")
+    public ResponseEntity<?> getComments(@PathVariable Long entryId) {
+        return ResponseEntity.ok(service.getComments(entryId));
+    }
+
+    /* ===== GET LIKE STATUS ===== */
+    @GetMapping("/likes/{entryId}")
+    public ResponseEntity<?> getLikes(
+            @PathVariable Long entryId,
+            @RequestParam Long userId
+    ) {
+        return ResponseEntity.ok(service.getLikes(entryId, userId));
     }
 }

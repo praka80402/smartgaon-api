@@ -1,6 +1,12 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Service;
 
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
@@ -22,36 +28,33 @@ public class LikeAndCommentService {
     private final UserRepository userRepo;
 
     /* =========================
-          LIKE (TOGGLE)
+            LIKE TOGGLE
        ========================= */
-    public String like(Long entryId, Long userId) {
+    public String addLike(Long entryId, Long userId) {
 
+        // Check if user already liked this entry
+        boolean exists = likeRepo.existsByEntryIdAndUserId(entryId, userId);
+        if (exists) {
+            return "Already liked";
+        }
+
+        // Save like
+        TalentLike like = new TalentLike();
+        like.setEntryId(entryId);
+        like.setUserId(userId);
+        likeRepo.save(like);
+
+        // Increase like count
         TalentEntry entry = entryRepo.findById(entryId)
                 .orElseThrow(() -> new RuntimeException("Entry not found"));
 
-        var existing = likeRepo.findByEntryIdAndUserId(entryId, userId);
-
-        if (existing.isPresent()) {
-            // Unlike
-            likeRepo.delete(existing.get());
-        } else {
-            // Add like
-            TalentLike like = new TalentLike();
-            like.setEntryId(entryId);
-            like.setUserId(userId);
-            likeRepo.save(like);
-        }
-
-        // Update Like Count
-        int likeCount = likeRepo.countByEntryId(entryId);
-        entry.setLikes(likeCount);
+        entry.setLikes(entry.getLikes() + 1);
         entryRepo.save(entry);
 
-        return "Likes updated: " + likeCount;
+        return "Likes updated: " + entry.getLikes();
     }
-
     /* =========================
-           ADD COMMENT
+             ADD COMMENT
        ========================= */
     public TalentComment addComment(Long entryId, Long userId, String text) {
 
@@ -61,18 +64,41 @@ public class LikeAndCommentService {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        TalentComment c = new TalentComment();
-        c.setEntryId(entryId);
-        c.setUserId(userId);
-        c.setUsername(user.getFirstName() + " " + user.getLastName());
-        c.setText(text);
-        commentRepo.save(c);
+        TalentComment comment = new TalentComment();
+        comment.setEntryId(entryId);
+        comment.setUserId(userId);
+        comment.setUsername(user.getFirstName() + " " + user.getLastName());
+        comment.setText(text);
 
-        // Update Comment Count
+        commentRepo.save(comment);
+
+        // Update comment count
         int count = commentRepo.countByEntryId(entryId);
         entry.setComments(count);
         entryRepo.save(entry);
 
-        return c;
+        return comment;
     }
+
+    /* =========================
+             GET COMMENTS
+       ========================= */
+    public List<TalentComment> getComments(Long entryId) {
+        return commentRepo.findByEntryIdOrderByCreatedAtDesc(entryId);
+    }
+    /* =========================
+    GET LIKE STATUS
+========================= */
+public Object getLikes(Long entryId, Long userId) {
+
+int likeCount = likeRepo.countByEntryId(entryId);
+
+boolean liked = likeRepo.existsByEntryIdAndUserId(entryId, userId);
+
+return new java.util.HashMap<String, Object>() {{
+   put("likes", likeCount);
+   put("liked", liked);
+}};
+}
+
 }
