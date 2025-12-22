@@ -15,6 +15,18 @@ public class JobController {
         this.service = service;
     }
 
+
+    @GetMapping("/open")
+public ResponseEntity<?> getOpenJobs(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size
+) {
+    return ResponseEntity.ok(
+            service.getOpenJobs(page, size)
+    );
+}
+
+
     @PostMapping
     public Job create(@RequestBody Job job) {
         return service.create(job);

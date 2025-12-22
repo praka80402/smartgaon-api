@@ -1,6 +1,8 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobhistory;
 
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 
 public interface JobHistoryService {
@@ -16,4 +18,8 @@ Page<EmployerJobHistoryResponse> getEmployerJobHistory(
             Integer rating,
             String comment
     );
+
+WorkerReviewResponse getWorkerReviews(Long applicantId);
+
+
 }

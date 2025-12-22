@@ -1,5 +1,9 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobs;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -74,6 +78,18 @@ public class JobServiceImpl implements JobService {
 
         applicationRepository.save(app);
     }
+
+    @Override
+public Page<Job> getOpenJobs(int page, int size) {
+
+    Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by("createdAt").descending()
+    );
+
+    return repo.findByStatusNot("CLOSED", pageable);
+}
 
     @Override
     public List<JobApplicantResponse> getApplicants(Long jobId) {

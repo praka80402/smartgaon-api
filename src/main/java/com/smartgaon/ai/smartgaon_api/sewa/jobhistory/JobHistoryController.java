@@ -6,8 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/jobs/history")
 @RequiredArgsConstructor
@@ -36,4 +34,12 @@ public class JobHistoryController {
                 jobId, applicantId, rating, comment);
         return ResponseEntity.ok("Review submitted");
     }
+
+    @GetMapping("/reviews/{applicantId}")
+public WorkerReviewResponse getWorkerReviews(
+        @PathVariable Long applicantId
+) {
+    return service.getWorkerReviews(applicantId);
+}
+
 }
