@@ -1,6 +1,8 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobhistory;
 
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +15,13 @@ public class JobHistoryController {
 
     private final JobHistoryService service;
 
-    // 👔 Employer job history
     @GetMapping("/employer/{employerId}")
-    public List<EmployerJobHistoryResponse>
-    getEmployerHistory(@PathVariable Long employerId) {
-        return service.getEmployerJobHistory(employerId);
+    public Page<EmployerJobHistoryResponse> getEmployerHistory(
+            @PathVariable Long employerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return service.getEmployerJobHistory(employerId, page, size);
     }
 
     // ⭐ Review candidate

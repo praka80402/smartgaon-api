@@ -1,11 +1,14 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobhistory;
 
-import java.util.List;
+
+import org.springframework.data.domain.Page;
 
 public interface JobHistoryService {
-
-    List<EmployerJobHistoryResponse>
-    getEmployerJobHistory(Long employerId);
+Page<EmployerJobHistoryResponse> getEmployerJobHistory(
+            Long employerId,
+            int page,
+            int size
+    );
 
     void submitReview(
             Long jobId,

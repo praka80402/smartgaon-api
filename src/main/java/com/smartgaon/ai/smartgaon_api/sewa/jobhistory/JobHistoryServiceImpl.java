@@ -7,12 +7,17 @@ import com.smartgaon.ai.smartgaon_api.sewa.jobs.JobApplication;
 import com.smartgaon.ai.smartgaon_api.sewa.jobs.JobApplicationRepository;
 import com.smartgaon.ai.smartgaon_api.sewa.jobs.JobRepository;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -23,52 +28,99 @@ public class JobHistoryServiceImpl implements JobHistoryService {
     private final JobRepository jobRepo;
     private final UserRepository userRepo;
 
+
     @Override
-    public List<EmployerJobHistoryResponse>
-    getEmployerJobHistory(Long employerId) {
+public Page<EmployerJobHistoryResponse> getEmployerJobHistory(
+        Long employerId, int page, int size) {
 
-        List<JobApplication> acceptedApps =
-                applicationRepo.findByEmployerIdAndStatus(
-                        employerId, "ACCEPTED"
-                );
-        System.out.println("acceptedApps"+acceptedApps.size());
+    Pageable pageable = PageRequest.of(
+            page,
+            size,
+            Sort.by("appliedAt").descending()
+    );
 
-        return acceptedApps.stream().map(app -> {
-
-
-            System.out.println("app.getJobId()"+app.getJobId());
-            System.out.println("app.getJobId()"+app.getApplicantId());
-
-            Job job = jobRepo.findById(app.getJobId())
-                    .orElseThrow();
-
-            User applicant = userRepo.findById(app.getApplicantId())
-                    .orElseThrow();
-
-            JobReview review =
-                    reviewRepo
-                            .findByJobIdAndApplicantId(
-                                    app.getJobId(),
-                                    app.getApplicantId()
-                            )
-                            .orElse(null);
-
-            System.out.println("applicant"
-                    +applicant.getFirstName());
-
-            return new EmployerJobHistoryResponse(
-                    job.getId(),
-                    job.getTitle(),
-                    applicant.getId(),
-                    applicant.getFirstName() + " " +
-                            applicant.getLastName(),
-                    applicant.getProfileImageUrl(),
-                    review != null ? review.getRating() : null,
-                    review != null ? review.getComment() : null,
-                    app.getAppliedAt()
+    Page<JobApplication> acceptedApps =
+            applicationRepo.findByEmployerIdAndStatus(
+                    employerId,
+                    "ACCEPTED",
+                    pageable
             );
-        }).toList();
-    }
+
+    return acceptedApps.map(app -> {
+
+        Job job = jobRepo.findById(app.getJobId())
+                .orElseThrow();
+
+        User applicant = userRepo.findById(app.getApplicantId())
+                .orElseThrow();
+
+        JobReview review = reviewRepo
+                .findByJobIdAndApplicantId(
+                        app.getJobId(),
+                        app.getApplicantId()
+                )
+                .orElse(null);
+
+        return new EmployerJobHistoryResponse(
+                job.getId(),
+                job.getTitle(),
+                applicant.getId(),
+                applicant.getFirstName() + " " + applicant.getLastName(),
+                applicant.getProfileImageUrl(),
+                review != null ? review.getRating() : null,
+                review != null ? review.getComment() : null,
+                app.getAppliedAt()
+        );
+    });
+}
+
+
+//     @Override
+//     public List<EmployerJobHistoryResponse>
+//     getEmployerJobHistory(Long employerId) {
+
+//         List<JobApplication> acceptedApps =
+//                 applicationRepo.findByEmployerIdAndStatus(
+//                         employerId, "ACCEPTED"
+//                 );
+//         System.out.println("acceptedApps"+acceptedApps.size());
+
+//         return acceptedApps.stream().map(app -> {
+
+
+//             System.out.println("app.getJobId()"+app.getJobId());
+//             System.out.println("app.getJobId()"+app.getApplicantId());
+
+//             Job job = jobRepo.findById(app.getJobId())
+//                     .orElseThrow();
+
+//             User applicant = userRepo.findById(app.getApplicantId())
+//                     .orElseThrow();
+
+//             JobReview review =
+//                     reviewRepo
+//                             .findByJobIdAndApplicantId(
+//                                     app.getJobId(),
+//                                     app.getApplicantId()
+//                             )
+//                             .orElse(null);
+
+//             System.out.println("applicant"
+//                     +applicant.getFirstName());
+
+//             return new EmployerJobHistoryResponse(
+//                     job.getId(),
+//                     job.getTitle(),
+//                     applicant.getId(),
+//                     applicant.getFirstName() + " " +
+//                             applicant.getLastName(),
+//                     applicant.getProfileImageUrl(),
+//                     review != null ? review.getRating() : null,
+//                     review != null ? review.getComment() : null,
+//                     app.getAppliedAt()
+//             );
+//         }).toList();
+//     }
 
     @Override
     public void submitReview(
