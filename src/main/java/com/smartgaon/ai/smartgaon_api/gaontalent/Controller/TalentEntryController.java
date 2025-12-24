@@ -1,5 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Controller;
 
+import java.time.LocalDate;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +22,8 @@ public class TalentEntryController {
     @PostMapping(value = "/participate", consumes = "multipart/form-data")
     public ResponseEntity<?> participate(
             @RequestParam String name,
-            @RequestParam int age,
+            @RequestParam String dob,             
+            @RequestParam String villageOrArea, 
             @RequestParam String phone,
             @RequestParam TalentCategory category,
             @RequestParam(required = false) Long competitionId,
@@ -30,7 +33,7 @@ public class TalentEntryController {
     ) throws Exception {
 
         return ResponseEntity.ok(
-                service.participate(name, age, phone, category, competitionId,isCompetition, profileImage, media)
+                service.participate(name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
         );
     }
 

@@ -9,6 +9,7 @@ import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentCategory;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentEntry;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -25,7 +26,8 @@ public class TalentEntryService {
 
     public String participate(
             String name,
-            int age,
+            LocalDate dob,
+            String villageOrArea,
             String phone,
             TalentCategory category,
             Long competitionId,
@@ -56,7 +58,8 @@ public class TalentEntryService {
 
         TalentEntry entry = new TalentEntry();
         entry.setName(name);
-        entry.setAge(age);
+        entry.setDob(dob);                      // ⭐ NEW
+        entry.setVillageOrArea(villageOrArea); 
         entry.setPhone(phone);
         entry.setCategory(category);
 

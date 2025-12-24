@@ -2,6 +2,8 @@ package com.smartgaon.ai.smartgaon_api.gaontalent.Entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -15,7 +17,11 @@ public class TalentEntry {
     private Long id;
 
     private String name;
-    private int age;
+//    private int age;
+    private LocalDate dob;
+
+    // ⭐ New: Village/Area
+    private String villageOrArea;
     private String phone;
 
     private String profileImageUrl;
