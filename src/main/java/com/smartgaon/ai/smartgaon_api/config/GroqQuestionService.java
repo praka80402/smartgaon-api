@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -52,68 +54,129 @@ public class GroqQuestionService {
 
     // ---------- LANGUAGE FORMATTER ----------
     private String applyLanguage(String prompt, String language) {
-        if (language == null || language.isBlank())
-            return "Please give the output in English.\n" + prompt;
+        if (language == null) language = "en";
 
         return switch (language.toLowerCase()) {
             case "hi", "hindi" -> """
                 कृपया सभी प्रश्न, विकल्प और उत्तर *हिंदी* भाषा में दें।
                 आउटपुट केवल JSON हो, कोई व्याख्या नहीं।
-                
+
                 """ + prompt;
 
             case "mr", "marathi" -> """
                 कृपया सर्व प्रश्न, पर्याय व उत्तरे *मराठी* भाषेत द्या.
                 फक्त JSON आउटपुट द्या, कोणतेही स्पष्टीकरण नाही.
-                
-                """ + prompt;
 
-            case "en", "english" -> """
-                Please give all questions and options in English language.
                 """ + prompt;
 
             default -> """
-                Please give all questions and options in English language.
+                Provide all questions and answers in English language only.
+
                 """ + prompt;
         };
     }
 
-    // ----------------- Call Groq -----------------
-    public String generateQuestions(String category, int count, String language) {
+    private String lastSixMonthsDateRange() {
+        LocalDate today = LocalDate.now();
+        LocalDate sixMonthsAgo = today.minusMonths(6);
 
-        String basePrompt = buildCategoryPrompt(category, count);
-        String prompt = basePrompt + """
-        
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
+
+        return "%s to %s".formatted(
+                sixMonthsAgo.format(fmt),
+                today.format(fmt)
+        );
+    }
+
+    // ---------- GOVT EXAM DAILY QUIZ ----------
+    public String generateGovtExamDailyQuiz(int count, String language) {
+
+        String dateRange = lastSixMonthsDateRange(); // <-- DYNAMIC
+
+        String prompt = """
+        Generate %d multiple choice questions for Indian Government exam preparation.
+
+        Exam types: SSC, Railway, Banking, UPSC, Police, Army.
+
+        Topic distribution:
+        - 30%% Static GK
+        - 20%% Current Affairs (India) from %s
+        - 20%% Reasoning (easy-medium)
+        - 20%% Quantitative aptitude (basic maths)
+        - 10%% English language
+
         Rules:
-        - Provide output in valid JSON array only
-        - 4 options per question
-        - specify exact correct answer as text
-        - no explanation, no markdown
+        - Provide output ONLY as JSON array
+        - Each question must have 4 options + exact correct answer
+        - No explanation, no markdown
+
         Format:
         [
-          {
-            "question": "....",
-            "options": ["A","B","C","D"],
-            "answer": "A"
-          }
+          {"question": "...", "options": ["A","B","C","D"], "answer": "A"}
         ]
+    """.formatted(count, dateRange);
+
+        return callGroq(applyLanguage(prompt, language));
+    }
+
+
+    // ---------- CLASS + SUBJECT BASED QUESTIONS ----------
+    public String generateQuestionsForClassAndSubject(
+            int classGrade, String subject, int count, String language) {
+
+        String prompt = """
+            Generate %d multiple choice questions for students of Class %d.
+            Subject: %s
+
+            Rules:
+            - Difficulty must match Class %d level
+            - Provide only JSON array output
+            - 4 options per question, correct answer text only
+
+            Format:
+            [
+              {"question": "...", "options": ["A","B","C","D"], "answer": "A"}
+            ]
+        """.formatted(count, classGrade, subject, classGrade);
+
+        return callGroq(applyLanguage(prompt, language));
+    }
+
+    // ---------- CATEGORY QUIZ ----------
+    public String generateQuestions(String category, int count, String language) {
+        String basePrompt = buildCategoryPrompt(category, count);
+        String prompt = basePrompt + """
+
+            Rules:
+            - Provide output in JSON array only
+            - 4 options per question
+            - Correct answer text only
+            - No explanation, no markdown
+
+            Format:
+            [
+              {"question": "...", "options": ["A","B","C","D"], "answer": "A"}
+            ]
         """;
 
-        // 🟢 Apply Hindi / Marathi / English
-        prompt = applyLanguage(prompt, language);
+        return callGroq(applyLanguage(prompt, language));
+    }
 
+    // ---------- SHARED GROQ CALL (Fix missing method) ----------
+    private String callGroq(String prompt) {
         String requestBody = """
-        {
-          "model": "llama-3.3-70b-versatile",
-          "messages": [
             {
-              "role": "user",
-              "content": "%s"
+              "model": "llama-3.3-70b-versatile",
+              "messages": [
+                {
+                  "role": "user",
+                  "content": "%s"
+                }
+              ],
+              "temperature": 0.7
             }
-          ],
-          "temperature": 0.7
-        }
-        """.formatted(prompt.replace("\n","\\n").replace("\"","\\\""));
+        """.formatted(prompt.replace("\n", "\\n")
+                .replace("\"", "\\\""));
 
         return webClient.post()
                 .uri("/chat/completions")
@@ -124,17 +187,17 @@ public class GroqQuestionService {
                 .block();
     }
 
-    // ----------------- Parse JSON from Groq -----------------
+    // ---------- PARSE QUIZ JSON ----------
     public List<QuizQuestion> extractQuestions(String rawResponse) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        Map<?,?> root = mapper.readValue(rawResponse, new TypeReference<Map<String,Object>>(){});
+        Map<?,?> root = mapper.readValue(rawResponse, new TypeReference<>() {});
         String jsonContent = ((Map<?,?>)((Map<?,?>)((List<?>)root.get("choices")).get(0))
                 .get("message")).get("content").toString();
 
-        return mapper.readValue(jsonContent, new TypeReference<List<QuizQuestion>>() {});
+        return mapper.readValue(jsonContent, new TypeReference<>() {});
     }
 
-    // ----------------- Generate & Parse in one step -----------------
+    // ---------- GENERATE + PARSE ----------
     public List<QuizQuestion> generateAndParseQuiz(String category, int count, String language) throws Exception {
         String response = generateQuestions(category, count, language);
         return extractQuestions(response);

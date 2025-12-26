@@ -13,11 +13,13 @@ public class QuizController {
         this.service = service;
     }
 
+
+
     // ---------- RAW JSON RESPONSE ----------
     @GetMapping("/generate")
     public String generateQuiz(
             @RequestParam(defaultValue = "general knowledge") String category,
-            @RequestParam(defaultValue = "5") int count,
+            @RequestParam(defaultValue = "10") int count,
             @RequestParam(defaultValue = "en") String language
     ) {
         return service.generateQuestions(category, count, language);
@@ -27,9 +29,29 @@ public class QuizController {
     @GetMapping("/generate-structured")
     public List<QuizQuestion> generateQuizStructured(
             @RequestParam(defaultValue="general knowledge") String category,
-            @RequestParam(defaultValue="5") int count,
+            @RequestParam(defaultValue="10") int count,
             @RequestParam(defaultValue="en") String language
     ) throws Exception {
         return service.generateAndParseQuiz(category, count, language);
     }
+    @GetMapping("/class-quiz")
+    public List<QuizQuestion> generateClassQuiz(
+            @RequestParam int classGrade,
+            @RequestParam String subject,
+            @RequestParam(defaultValue="10") int count,
+            @RequestParam(defaultValue="en") String language
+    ) throws Exception {
+        String response = service.generateQuestionsForClassAndSubject(classGrade, subject, count, language);
+        return service.extractQuestions(response);
+    }
+    @GetMapping("/daily-govt")
+    public List<QuizQuestion> dailyGovtQuiz(
+            @RequestParam(defaultValue="10") int count,
+            @RequestParam(defaultValue="en") String language
+    ) throws Exception {
+        String response = service.generateGovtExamDailyQuiz(count, language);
+        return service.extractQuestions(response);
+    }
+
+
 }
