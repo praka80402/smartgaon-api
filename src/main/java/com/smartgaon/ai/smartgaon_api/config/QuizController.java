@@ -12,21 +12,8 @@ public class QuizController {
     public QuizController(GroqQuestionService service) {
         this.service = service;
     }
-
-
-
-    // ---------- RAW JSON RESPONSE ----------
-    @GetMapping("/generate")
-    public String generateQuiz(
-            @RequestParam(defaultValue = "general knowledge") String category,
-            @RequestParam(defaultValue = "10") int count,
-            @RequestParam(defaultValue = "en") String language
-    ) {
-        return service.generateQuestions(category, count, language);
-    }
-
     // ---------- PARSED OBJECT RESPONSE ----------
-    @GetMapping("/generate-structured")
+    @GetMapping("/generate")
     public List<QuizQuestion> generateQuizStructured(
             @RequestParam(defaultValue="general knowledge") String category,
             @RequestParam(defaultValue="10") int count,
@@ -44,13 +31,14 @@ public class QuizController {
         String response = service.generateQuestionsForClassAndSubject(classGrade, subject, count, language);
         return service.extractQuestions(response);
     }
-    @GetMapping("/daily-govt")
-    public List<QuizQuestion> dailyGovtQuiz(
+    @GetMapping("/govt")
+    public List<QuizQuestion> generateGovtQuiz(
             @RequestParam(defaultValue="10") int count,
-            @RequestParam(defaultValue="en") String language
+            @RequestParam(defaultValue="en") String lang,
+            @RequestParam(defaultValue="SSC") String examType
     ) throws Exception {
-        String response = service.generateGovtExamDailyQuiz(count, language);
-        return service.extractQuestions(response);
+        String raw = service.generateGovtExamDailyQuiz(count, lang, examType);
+        return service.extractQuestions(raw);
     }
 
 

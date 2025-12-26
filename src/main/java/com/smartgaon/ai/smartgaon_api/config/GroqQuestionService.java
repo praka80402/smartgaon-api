@@ -26,31 +26,53 @@ public class GroqQuestionService {
     // ---------- CATEGORY-BASED PROMPT BUILDER ----------
     private String buildCategoryPrompt(String category, int count) {
         return switch (category.toLowerCase()) {
-            case "teacher" -> """
-                Generate %d multiple choice quiz questions for school teachers.
-                Topics: pedagogy, education, classroom management, learning psychology, teaching skills.
-            """.formatted(count);
+
+            case "citizen" -> """
+            Generate %d multiple choice quiz questions for Indian citizens.
+            Topics: constitution, rights & duties, public services, government schemes, traffic safety,
+            environment, digital literacy, civic responsibility.
+        """.formatted(count);
 
             case "farmer" -> """
-                Generate %d multiple choice quiz questions for farmers.
-                Topics: crops, fertilizers, pesticides, soil, irrigation, organic farming.
-            """.formatted(count);
+            Generate %d multiple choice quiz questions for farmers.
+            Topics: crops, fertilizers, pesticides, soil health, irrigation, organic farming,
+            government agriculture schemes like PM-KISAN, MSP, KCC.
+        """.formatted(count);
+
+            case "vendor" -> """
+            Generate %d multiple choice quiz questions for street vendors & small shop owners.
+            Topics: GST basics, business license, digital payments (UPI), customer safety,
+            PM SVANidhi scheme, basic accounting, market practices.
+        """.formatted(count);
+
+            case "teacher" -> """
+            Generate %d multiple choice quiz questions for school teachers.
+            Topics: pedagogy, NEP 2020, child psychology, learning outcomes, classroom management,
+            teaching methods.
+        """.formatted(count);
+
+            case "electrician" -> """
+            Generate %d multiple choice quiz questions for electricians.
+            Topics: wiring safety, electrical tools, circuits, voltage/current basics,
+            household electrical systems, government safety standards, renewable energy basics.
+        """.formatted(count);
 
             case "doctor" -> """
-                Generate %d multiple choice quiz questions for doctors and medical students.
-                Topics: anatomy, diseases, first aid, medicines, healthcare basics.
-            """.formatted(count);
+            Generate %d multiple choice quiz questions for doctors and medical students.
+            Topics: anatomy, diseases, first aid, public health programs, medicines, nutrition.
+        """.formatted(count);
 
             case "student" -> """
-                Generate %d multiple choice quiz questions for students.
-                Topics: general science, maths, social studies, environment.
-            """.formatted(count);
+            Generate %d multiple choice quiz questions for students.
+            Topics: science, maths, history, general knowledge, environment.
+        """.formatted(count);
 
             default -> """
-                Generate %d general knowledge multiple choice quiz questions.
-            """.formatted(count);
+            Generate %d general knowledge multiple choice quiz questions.
+        """.formatted(count);
         };
     }
+
 
     // ---------- LANGUAGE FORMATTER ----------
     private String applyLanguage(String prompt, String language) {
@@ -89,14 +111,18 @@ public class GroqQuestionService {
     }
 
     // ---------- GOVT EXAM DAILY QUIZ ----------
-    public String generateGovtExamDailyQuiz(int count, String language) {
+    public String generateGovtExamDailyQuiz(
+            int count,
+            String language,
+            String examType   // <-- NOW ONLY ONE
+    ) {
 
-        String dateRange = lastSixMonthsDateRange(); // <-- DYNAMIC
+        String dateRange = lastSixMonthsDateRange();
 
         String prompt = """
         Generate %d multiple choice questions for Indian Government exam preparation.
 
-        Exam types: SSC, Railway, Banking, UPSC, Police, Army.
+        Exam type: %s
 
         Topic distribution:
         - 30%% Static GK
@@ -114,10 +140,12 @@ public class GroqQuestionService {
         [
           {"question": "...", "options": ["A","B","C","D"], "answer": "A"}
         ]
-    """.formatted(count, dateRange);
+        """
+                .formatted(count, examType, dateRange);
 
         return callGroq(applyLanguage(prompt, language));
     }
+
 
 
     // ---------- CLASS + SUBJECT BASED QUESTIONS ----------
