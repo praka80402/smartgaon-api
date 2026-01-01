@@ -1,7 +1,9 @@
 package com.smartgaon.ai.smartgaon_api.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,6 +17,7 @@ import java.util.Map;
 public class GroqQuestionService {
 
     private final WebClient webClient;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     @Value("${groq.api.key}")
     private String groqApiKey;
@@ -190,6 +193,37 @@ public class GroqQuestionService {
         return callGroq(applyLanguage(prompt, language));
     }
 
+
+    public CareerGuideResponse generateCareerGuide(
+            String careerField,
+            int yearsExperience,
+            String language
+    ) throws Exception {
+
+        String prompt = buildPrompt(careerField, yearsExperience, language);
+        String rawResponse = callGroq(prompt);
+
+        // 1️⃣ parse Groq wrapper
+        Map<String,Object> root = mapper.readValue(rawResponse, new TypeReference<>() {});
+        Map<String,Object> choice0 = (Map<String,Object>) ((List<?>) root.get("choices")).get(0);
+        Map<String,Object> message = (Map<String,Object>) choice0.get("message");
+        String content = (String) message.get("content");
+
+        // 2️⃣ strip code fences
+        content = content
+                .replace("```json", "")
+                .replace("```", "")
+                .trim();
+
+        // 3️⃣ extract only JSON object between FIRST { and LAST }
+        int start = content.indexOf("{");
+        int end   = content.lastIndexOf("}") + 1;
+        String justJson = content.substring(start, end);
+
+
+        // 4️⃣ parse into your POJO
+        return mapper.readValue(justJson, CareerGuideResponse.class);
+    }
     // ---------- SHARED GROQ CALL (Fix missing method) ----------
     private String callGroq(String prompt) {
         String requestBody = """
@@ -215,6 +249,65 @@ public class GroqQuestionService {
                 .block();
     }
 
+    /** ---------- PROMPT ---------- **/
+    private String buildPrompt(String career, int exp, String language) {
+
+        String langHeader = switch (language.toLowerCase()) {
+            case "hi", "hindi" -> "Provide answers in *Hindi*.";
+            case "mr", "marathi" -> "Answer in *Marathi*.";
+            default -> "Answer in *English*.";
+        };
+
+        return """
+            %s
+
+            Create a detailed *career roadmap* for someone interested in: **%s**
+            Current experience level: **%d years**
+
+            Include:
+            - Recommended learning path (step-by-step)
+            - Skills required (beginner -> advanced)
+            - Certifications / courses (free + paid)
+            - Job roles to target at each stage
+            - Expected salary range in India (approx.)
+            - Tools & technologies needed
+            - Mistakes to avoid
+            - First 30-day action plan
+
+            STRICT RULES:
+            - Output must be JSON ONLY
+            - No markdown, no extra text, no explanation outside JSON
+            - Structure must match:
+
+            {
+              "field": "",
+              "summary": "",
+              "skills": {
+                "beginner": [],
+                "intermediate": [],
+                "advanced": []
+              },
+              "roadmap": [
+                {"stage": "", "description": "", "duration": "x months"}
+              ],
+              "certifications": [
+                {"name": "", "provider": "", "free": true}
+              ],
+              "job_roles": [],
+              "salary_india": {
+                "entry": "",
+                "mid": "",
+                "senior": ""
+              },
+              "action_plan_30_days": [
+                "Day 1-7: ...",
+                "Day 8-15: ..."
+              ],
+              "common_mistakes": []
+            }
+        """.formatted(langHeader, career, exp);
+    }
+
     // ---------- PARSE QUIZ JSON ----------
     public List<QuizQuestion> extractQuestions(String rawResponse) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -230,4 +323,49 @@ public class GroqQuestionService {
         String response = generateQuestions(category, count, language);
         return extractQuestions(response);
     }
+    /** ---------- RESPONSE MODELS ---------- **/
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class CareerGuideResponse {
+        public String field;
+        public String summary;
+        public Skills skills;
+        public List<RoadmapStep> roadmap;
+        public Salary salary_india;
+        public List<String> job_roles;
+        public List<String> action_plan_30_days;
+        public List<Certification> certifications;
+        public List<String> common_mistakes;
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Skills {
+        private List<String> beginner;
+        private List<String> intermediate;
+        private List<String> advanced;
+    }
+
+    @Data
+    public static class RoadmapStep {
+        private String stage;
+        private String description;
+        private String duration;
+    }
+
+    @Data
+    public static class Certification {
+        private String name;
+        private String provider;
+        private boolean free;
+    }
+
+    @Data
+    public static class Salary {
+        private String entry;
+        private String mid;
+        private String senior;
+    }
+
+
 }
