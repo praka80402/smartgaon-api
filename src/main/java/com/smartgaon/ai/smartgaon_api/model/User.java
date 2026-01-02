@@ -67,4 +67,15 @@ public class User {
 
     @Column(name = "profile_completed")
     private boolean profileCompleted = false;
+    
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+    
+    @Column(name = "deleted_by")
+    private String deletedBy; // "USER" or "ADMIN"
+
+    private LocalDateTime deletedAt;
+    
+    @Column(name = "account_enabled")
+    private Boolean accountEnabled = true;
 }

@@ -60,6 +60,44 @@ public class AuthService {
     // ======================================================
     // SEND OTP FOR LOGIN
     // ======================================================
+//    public ResponseEntity<?> sendOtp(String mobile) {
+//
+//        if (!mobile.matches("^[6-9]\\d{9}$")) {
+//            return ResponseEntity.badRequest().body(
+//                    Map.of("error", "Please enter a valid 10-digit mobile number.")
+//            );
+//        }
+//
+//        Optional<User> existingUser = repo.findByPhone(mobile);
+//
+//        if (existingUser.isEmpty()) {
+//            return ResponseEntity.status(404).body(
+//                    Map.of("error", "User not found", "navigate", "signup")
+//            );
+//        }
+//
+//        User user = existingUser.get();
+//        
+//        if (user.isDeleted()) {
+//            return ResponseEntity.status(403).body(
+//                    Map.of("error", "You are no longer a user.", "deletedBy", user.getDeletedBy())
+//            );
+//        }
+//
+//        String otp = "1235";
+//        LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+//
+//        user.setOtp(otp);
+//        user.setOtpExpiry(expiry);
+//        user.setVerified(false);
+//
+//        repo.save(user);
+//
+//        return ResponseEntity.ok(
+//                Map.of("otp", otp, "message", "OTP generated successfully")
+//        );
+//    }
+
     public ResponseEntity<?> sendOtp(String mobile) {
 
         if (!mobile.matches("^[6-9]\\d{9}$")) {
@@ -77,7 +115,25 @@ public class AuthService {
         }
 
         User user = existingUser.get();
+        
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+            return ResponseEntity.status(403).body(
+                    Map.of("error", "Your account has been disabled by admin.")
+            );
+        }
 
+
+        // 🆕 BLOCK LOGIN IF ACCOUNT IS DELETED
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            return ResponseEntity.status(403).body(
+                    Map.of(
+                            "error", "You are no longer a user.",
+                            "deletedBy", user.getDeletedBy()
+                    )
+            );
+        }
+
+        // Generate OTP
         String otp = "1235";
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
@@ -92,7 +148,6 @@ public class AuthService {
         );
     }
 
-
     // ======================================================
     // VERIFY OTP
     // ======================================================
@@ -105,6 +160,7 @@ public class AuthService {
             response.put("error", "Mobile number not found");
             return response;
         }
+        
 
         User user = userOpt.get();
 
@@ -114,6 +170,19 @@ public class AuthService {
             response.put("verified", false);
             return response;
         }
+        
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            response.put("error", "You are no longer a user. Deleted by: " + user.getDeletedBy());
+            response.put("verified", false);
+            return response;
+        }
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+            response.put("error", "Your account has been disabled by admin.");
+            response.put("verified", false);
+            return response;
+        }
+
+        
 
         if (!otp.equals(user.getOtp())) {
             response.put("message", "Wrong OTP");
@@ -132,6 +201,7 @@ public class AuthService {
 
         return response;
     }
+    
 
 
     // ======================================================
@@ -139,6 +209,8 @@ public class AuthService {
     // ======================================================
     public Optional<User> validate(String email, String pass) {
         return repo.findByEmail(email)
+                .filter(u -> !Boolean.TRUE.equals(u.getIsDeleted()))
+                .filter(u -> Boolean.TRUE.equals(u.getAccountEnabled()))
                 .filter(u -> encoder.matches(pass, u.getPassword()));
     }
 
@@ -199,7 +271,15 @@ public class AuthService {
         Optional<User> userOpt = repo.findByPhone(phone);
 
         if (userOpt.isPresent()) {
-            repo.delete(userOpt.get());
+            User user = userOpt.get();
+
+            // 🆕 Soft Delete
+            user.setIsDeleted(true);
+            user.setDeletedBy("USER");   // because user deletes own account
+            user.setDeletedAt(LocalDateTime.now());
+            user.setVerified(false);
+
+            repo.save(user);
             return true;
         }
 

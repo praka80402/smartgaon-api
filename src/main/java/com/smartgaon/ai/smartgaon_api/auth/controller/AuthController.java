@@ -170,16 +170,58 @@ public class AuthController {
     // =====================================================
     // OTP SEND (FOR LOGIN)
     // =====================================================
+//    @PostMapping("/send-otp")
+//    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+//        return auth.sendOtp(mobile);
+//    }
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+
+        Optional<User> userOpt = auth.findByPhone(mobile);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // 🆕 BLOCK LOGIN IF USER IS DELETED
+            if (Boolean.TRUE.equals(user.getIsDeleted())) {
+                return ResponseEntity.status(403).body(
+                        Map.of(
+                                "error", "You are no longer a user.",
+                                "deletedBy", user.getDeletedBy()
+                        )
+                );
+            }
+        }
+
         return auth.sendOtp(mobile);
     }
 
     // =====================================================
     // OTP VERIFY
     // =====================================================
+//    @PostMapping("/verify-otp")
+//    public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
+//        return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
+//    }
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
+
+        Optional<User> userOpt = auth.findByPhone(mobile);
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // 🆕 BLOCK LOGIN IF USER IS DELETED
+            if (Boolean.TRUE.equals(user.getIsDeleted())) {
+                return ResponseEntity.status(403).body(
+                        Map.of(
+                                "error", "You are no longer a user. Deleted by: " + user.getDeletedBy(),
+                                "verified", false
+                        )
+                );
+            }
+        }
+
         return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
     }
 
