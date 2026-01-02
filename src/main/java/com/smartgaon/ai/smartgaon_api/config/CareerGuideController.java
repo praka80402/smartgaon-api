@@ -54,12 +54,29 @@ public class CareerGuideController {
     }
 
     @GetMapping("/guide/history")
-    public List<String> history(
+    public List<GroqQuestionService.CareerGuideResponse> history(
             @RequestHeader("X-IDENTIFIER") String identifier
-    ) {
+    ) throws Exception {
+
         identifier = identifier.trim().toLowerCase();
-        return redisService.getHistory(identifier);
+
+        List<String> rawList = redisService.getHistory(identifier);
+
+        return rawList.stream()
+                .map(json -> {
+                    try {
+                        return mapper.readValue(
+                                json,
+                                GroqQuestionService.CareerGuideResponse.class
+                        );
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+                .filter(obj -> obj != null)
+                .toList();
     }
+
 
     @PostMapping("/guide/reset")
     public Map<String, Object> resetLimit(
