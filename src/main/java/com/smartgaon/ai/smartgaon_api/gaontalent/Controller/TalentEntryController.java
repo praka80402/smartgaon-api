@@ -12,7 +12,7 @@ import com.smartgaon.ai.smartgaon_api.gaontalent.Service.TalentEntryService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/gaon-talent")   // <-- FIXED BASE PATH
+@RequestMapping("/api/gaon-talent")  
 @RequiredArgsConstructor
 public class TalentEntryController {
 
