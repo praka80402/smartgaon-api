@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.*;
+
+import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentCategory;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentEntry;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.*;
+import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
 import java.time.LocalDate;
@@ -20,11 +23,13 @@ public class TalentEntryService {
     private final TalentCompetitionRepository compRepo;
     private final ReferenceNumberService referenceService;
     private final S3Service s3Service;
+    private final UserRepository userRepository;
 
     private final List<String> imageTypes = List.of("jpg", "jpeg", "png");
     private final List<String> videoTypes = List.of("mp4", "mov", "avi");
 
     public String participate(
+    		Long userId, //
             String name,
             LocalDate dob,
             String villageOrArea,
@@ -35,6 +40,10 @@ public class TalentEntryService {
             MultipartFile profileImage,
             MultipartFile media
     ) throws Exception {
+    	
+    	// ⭐ Fetch ONLY pincode from user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new Exception("User not found"));
 
         if (isCompetition) {
             if (competitionId == null) {
@@ -61,6 +70,7 @@ public class TalentEntryService {
         entry.setDob(dob);                      // ⭐ NEW
         entry.setVillageOrArea(villageOrArea); 
         entry.setPhone(phone);
+        entry.setUserPincode(user.getPincode());
         entry.setCategory(category);
 
         entry.setCompetition(isCompetition);   // NEW

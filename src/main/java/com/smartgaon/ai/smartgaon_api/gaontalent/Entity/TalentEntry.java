@@ -22,6 +22,7 @@ public class TalentEntry {
 
     // ⭐ New: Village/Area
     private String villageOrArea;
+    private String userPincode;
     private String phone;
 
     private String profileImageUrl;

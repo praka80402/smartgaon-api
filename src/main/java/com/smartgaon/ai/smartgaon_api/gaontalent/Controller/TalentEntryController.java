@@ -21,6 +21,7 @@ public class TalentEntryController {
     // ---------------- PARTICIPATE API ----------------
     @PostMapping(value = "/participate", consumes = "multipart/form-data")
     public ResponseEntity<?> participate(
+    		@RequestAttribute("userId") Long userId,
             @RequestParam String name,
             @RequestParam String dob,             
             @RequestParam String villageOrArea, 
@@ -33,7 +34,7 @@ public class TalentEntryController {
     ) throws Exception {
 
         return ResponseEntity.ok(
-                service.participate(name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
+                service.participate(userId,name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
         );
     }
 
