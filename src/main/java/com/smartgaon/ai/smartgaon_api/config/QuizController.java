@@ -41,14 +41,7 @@ public class QuizController {
         return service.extractQuestions(raw);
     }
 
-    @GetMapping("/guide")
-    public GroqQuestionService.CareerGuideResponse guide(
-            @RequestParam String field,
-            @RequestParam(defaultValue = "0") int exp,
-            @RequestParam(defaultValue = "en") String lang
-    ) throws Exception {
-        return service.generateCareerGuide(field, exp, lang);
-    }
+
 
 
 }
