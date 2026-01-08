@@ -1,5 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.donation.model;
 
+import com.smartgaon.ai.smartgaon_api.model.User;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,9 +22,13 @@ public class Badge {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long userId;
+//    private Long userId;
     private String badgeName;
     private String reason;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+    
 }
 
 
