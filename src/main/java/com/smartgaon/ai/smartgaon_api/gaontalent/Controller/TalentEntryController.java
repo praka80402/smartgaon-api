@@ -21,7 +21,7 @@ public class TalentEntryController {
     // ---------------- PARTICIPATE API ----------------
     @PostMapping(value = "/participate", consumes = "multipart/form-data")
     public ResponseEntity<?> participate(
-    		@RequestAttribute("userId") Long userId,
+            @RequestParam Long userId,
             @RequestParam String name,
             @RequestParam String dob,             
             @RequestParam String villageOrArea, 

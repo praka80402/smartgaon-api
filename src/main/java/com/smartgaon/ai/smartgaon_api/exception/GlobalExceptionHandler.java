@@ -30,13 +30,16 @@ public class GlobalExceptionHandler {
     }
 
     // fallback (optional)
+    // ✅ TRUE generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
+
+        ex.printStackTrace(); // 🔥 IMPORTANT for debugging
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", false);
         body.put("error", "INTERNAL_ERROR");
-        body.put("message", "You have reached your daily career guide limit.");
+        body.put("message", "Something went wrong. Please try again later.");
         body.put("timestamp", Instant.now());
 
         return ResponseEntity
