@@ -27,6 +27,8 @@ public class BusinessPost {
 
     private String location;
 
+    private String budget;
+
     @Column(columnDefinition = "json")
     private String images; // JSON string
 

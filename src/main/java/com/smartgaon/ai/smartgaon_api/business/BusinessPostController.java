@@ -19,6 +19,8 @@ public class BusinessPostController {
             @RequestParam String title,
             @RequestParam String description,
             @RequestParam String location,
+            @RequestParam String budget,
+
             @RequestParam("images") MultipartFile[] images
     ) {
         try {
@@ -31,7 +33,7 @@ public class BusinessPostController {
             }
 
             return ResponseEntity.ok(
-                    service.create(userId, title, description, location, images)
+                    service.create(userId, title, description, location,budget, images)
             );
 
         } catch (Exception e) {

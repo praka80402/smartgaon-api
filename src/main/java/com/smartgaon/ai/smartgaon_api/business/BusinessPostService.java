@@ -27,6 +27,7 @@ public class BusinessPostService {
             String title,
             String description,
             String location,
+            String budget,
             MultipartFile[] images
     ) {
 
@@ -43,6 +44,7 @@ public class BusinessPostService {
             BusinessPost post = new BusinessPost();
             post.setUserId(userId);
             post.setTitle(title);
+            post.setBudget(budget);
             post.setDescription(description);
             post.setLocation(location);
             post.setImages(imagesJson); // 👈 JSON STRING
@@ -73,6 +75,7 @@ public class BusinessPostService {
                                 b.getTitle(),
                                 b.getDescription(),
                                 b.getLocation(),
+                                b.getBudget(),
                                 images,
                                 b.getStatus()
                         );

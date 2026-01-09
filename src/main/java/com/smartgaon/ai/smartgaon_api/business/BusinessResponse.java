@@ -12,6 +12,7 @@ public class BusinessResponse {
     private String title;
     private String description;
     private String location;
+    private String budget;
     private List<String> images;
     private String status;
 }
