@@ -24,7 +24,7 @@ public class Badge {
 
 //    private Long userId;
     private String badgeName;
-    private String reason;
+//    private String reason;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

@@ -55,6 +55,39 @@ public class AuthService {
                 "phone", phone
         );
     }
+    
+ // ======================================================
+ // UPDATE USER PROFILE
+ // ======================================================
+ public User updateUserProfile(Long id, Map<String, String> req) {
+
+     User user = repo.findById(id)
+             .orElseThrow(() -> new RuntimeException("User not found"));
+
+     if (Boolean.TRUE.equals(user.getIsDeleted())) {
+         throw new RuntimeException("User account is deleted");
+     }
+
+     // Update allowed fields only
+     user.setFirstName(req.getOrDefault("firstName", user.getFirstName()));
+     user.setLastName(req.getOrDefault("lastName", user.getLastName()));
+     user.setPhone(req.getOrDefault("phone", user.getPhone()));
+     user.setState(req.getOrDefault("state", user.getState()));
+     user.setDistrict(req.getOrDefault("district", user.getDistrict()));
+     user.setArea(req.getOrDefault("area", user.getArea()));
+     user.setPincode(req.getOrDefault("pincode", user.getPincode()));
+     user.setOccupation(req.getOrDefault("occupation", user.getOccupation()));
+     user.setNote(req.getOrDefault("note", user.getNote()));
+     user.setProfileImageUrl(
+             req.getOrDefault("profileImageUrl", user.getProfileImageUrl())
+     );
+
+     // Mark profile completed
+     user.setProfileCompleted(true);
+
+     return repo.save(user);
+ }
+
 
 
     // ======================================================

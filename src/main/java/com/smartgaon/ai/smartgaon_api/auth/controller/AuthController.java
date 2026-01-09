@@ -251,4 +251,28 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "Something went wrong"));
         }
     }
+    
+ // =====================================================
+ // UPDATE PROFILE
+ // =====================================================
+ @PutMapping("/update-profile/{id}")
+ public ResponseEntity<?> updateProfile(
+         @PathVariable Long id,
+         @RequestBody Map<String, String> req) {
+
+     try {
+         User updatedUser = auth.updateUserProfile(id, req);
+         return ResponseEntity.ok(
+                 Map.of(
+                         "message", "Profile updated successfully",
+                         "user", updatedUser
+                 )
+         );
+     } catch (RuntimeException e) {
+         return ResponseEntity.status(400).body(
+                 Map.of("error", e.getMessage())
+         );
+     }
+ }
+
 }

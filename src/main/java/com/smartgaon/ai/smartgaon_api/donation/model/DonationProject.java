@@ -59,6 +59,15 @@ public class DonationProject {
     )
     @Column(name = "video_url", length = 1000)
     private List<String> videoUrls = new ArrayList<>();
+    
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "donation_project_gallery",
+        joinColumns = @JoinColumn(name = "project_id")
+    )
+    @Column(name = "gallery_image_url", length = 1000)
+    private List<String> galleryImages = new ArrayList<>();
+
 
     // REMAINING AMOUNT (AUTO)
     @Transient
