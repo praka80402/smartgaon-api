@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
                     .orElseThrow(() -> new RuntimeException("Home layout not found"));
 
             return sectionRepo.findByLayout(layout).stream()
-                    .filter(HomeLayoutSection::getVisible)
                     .sorted(Comparator.comparing(
                             HomeLayoutSection::getDisplayOrder))
                     .map(s -> new HomeLayoutSectionResponse(
