@@ -42,14 +42,55 @@ public class BusinessPostController {
     }
 
 
+    /* ================= MY BUSINESSES (PAGINATION) ================= */
     @GetMapping("/my")
     public ResponseEntity<?> myBusinesses(
-            @RequestParam Long userId
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset
+    ) throws Exception {
+
+        return ResponseEntity.ok(
+                service.myBusinesses(userId, limit, offset)
+        );
+    }
+
+    /* ================= PUBLIC BUSINESSES ================= */
+    @GetMapping("/public")
+    public ResponseEntity<?> publicBusinesses(
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset
+    ) throws Exception {
+
+        return ResponseEntity.ok(
+                service.publicBusinesses(limit, offset)
+        );
+    }
+
+    /* ================= UPDATE ================= */
+    @PutMapping("/{businessId}")
+    public ResponseEntity<?> update(
+            @PathVariable Long businessId,
+            @RequestParam Long userId,
+            @RequestParam String title,
+            @RequestParam String description,
+            @RequestParam String location,
+            @RequestParam String budget
     ) {
-        try {
-            return ResponseEntity.ok(service.myBusinesses(userId));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Fetch failed");
-        }
+
+        return ResponseEntity.ok(
+                service.update(businessId, userId, title, description, location, budget)
+        );
+    }
+
+    /* ================= DELETE ================= */
+    @DeleteMapping("/{businessId}")
+    public ResponseEntity<?> delete(
+            @PathVariable Long businessId,
+            @RequestParam Long userId
+    ) throws Exception {
+
+        service.delete(businessId, userId);
+        return ResponseEntity.ok("Deleted successfully");
     }
 }
