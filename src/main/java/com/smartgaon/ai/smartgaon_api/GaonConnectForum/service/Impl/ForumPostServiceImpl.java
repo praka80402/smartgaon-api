@@ -11,6 +11,10 @@ import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCr
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostUpdateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.model.ForumPost;
+import com.smartgaon.ai.smartgaon_api.GaonConnectForum.model.ForumPostReport;
+import com.smartgaon.ai.smartgaon_api.GaonConnectForum.model.ReportReason;
+
+import com.smartgaon.ai.smartgaon_api.GaonConnectForum.repository.ForumPostReportRepository;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.repository.ForumPostRepository;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.ForumPostService;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
@@ -30,6 +34,9 @@ public class ForumPostServiceImpl implements ForumPostService {
 
     @Autowired
     private UserRepository userRepo;
+    
+    @Autowired
+    private ForumPostReportRepository reportRepo;
 
     // ================= MAP ENTITY TO RESPONSE =================
     private ForumPostResponse map(ForumPost p) {
@@ -310,5 +317,52 @@ public class ForumPostServiceImpl implements ForumPostService {
         postRepo.save(post);
         return map(post);
     }
+    
+//   ------------------------ 
+    
+    @Override
+    @Transactional
+    public ForumPostResponse reportPost(
+            Long postId,
+            Long userId,
+            ReportReason reason,
+            String customReason
+    ) {
+
+        ForumPost post = postRepo.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        if (reportRepo.existsByPost_PostIdAndReportedByUserId(postId, userId)) {
+            throw new RuntimeException("Already reported");
+        }
+
+        if (reason == ReportReason.OTHER &&
+            (customReason == null || customReason.trim().isEmpty())) {
+            throw new RuntimeException("Custom reason required");
+        }
+
+        ForumPostReport report = new ForumPostReport();
+        report.setPost(post);
+        report.setReportedByUserId(userId);
+        report.setReason(reason);
+        report.setCustomReason(reason == ReportReason.OTHER ? customReason : null);
+
+        reportRepo.save(report);
+        return map(post);
+    }
+    
+    
+    @Override
+    public Page<ForumPostResponse> listVisiblePostsForUser(
+            Long userId,
+            Pageable pageable
+    ) {
+        return postRepo
+                .findVisiblePostsForUser(userId, pageable)
+                .map(this::map);
+    }
+
+
+   
 
 }

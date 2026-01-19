@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostUpdateDto;
+import com.smartgaon.ai.smartgaon_api.GaonConnectForum.model.ReportReason;
 
 public interface ForumPostService {
 
@@ -56,4 +57,15 @@ public interface ForumPostService {
             String category,
             List<MultipartFile> newMediaFiles
     );
+    
+    ForumPostResponse reportPost(
+            Long postId,
+            Long userId,
+            ReportReason reason,
+            String customReason
+    );
+    
+
+    Page<ForumPostResponse> listVisiblePostsForUser(Long userId, Pageable pageable);
+
 }

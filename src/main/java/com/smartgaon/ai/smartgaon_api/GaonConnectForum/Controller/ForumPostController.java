@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
+import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostReportDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostUpdateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.ForumPostService;
@@ -33,14 +34,35 @@ public class ForumPostController {
     }
 
     // ------------ LIST POSTS ----------
+//    @GetMapping
+//    public Page<ForumPostResponse> list(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size
+//    ) {
+//        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+//        return postService.list(pageable);
+//    }
+    
     @GetMapping
     public Page<ForumPostResponse> list(
+            @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return postService.list(pageable);
+        Pageable pageable =
+                PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        if (userId == null) {
+            // users without login / other modules
+            return postService.list(pageable);
+        }
+
+        // 🔥 only hide posts reported by THIS user
+        return postService.listVisiblePostsForUser(userId, pageable);
     }
+
+
+    
 
     // ------------ SEARCH ----------
     @GetMapping("/search")
@@ -127,4 +149,20 @@ public class ForumPostController {
     ) {
         return postService.createWithMedia(userId, title, content, category, area, mediaFiles);
     }
+    
+    
+    @PostMapping("/report")
+    public ResponseEntity<String> reportPost(
+            @RequestBody ForumPostReportDto dto
+    ) {
+        postService.reportPost(
+                dto.postId(),
+                dto.userId(),
+                dto.reason(),
+                dto.customReason()
+        );
+        return ResponseEntity.ok("Post reported successfully");
+    }
+
+
 }

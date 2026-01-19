@@ -13,7 +13,7 @@ import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
 import java.time.LocalDate;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -97,5 +97,40 @@ public class TalentEntryService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         return entryRepo.findByCategory(category, pageable);
     }
+    
+    public List<TalentCategory> getAllCategories(TalentCategory first) {
+
+        List<TalentCategory> categories =
+                new ArrayList<>(List.of(TalentCategory.values()));
+
+        if (first != null && categories.contains(first)) {
+            categories.remove(first);
+            categories.add(0, first); // ⭐ show first
+        }
+
+        return categories;
+    }
+ 
+
+    
+    public Page<TalentEntry> getFeed(
+            TalentCategory category,
+            int page,
+            int size,
+            Long userId
+    ) {
+        Pageable pageable =
+            PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        // If user not logged in → normal feed
+        if (userId == null) {
+            return entryRepo.findByCategory(category, pageable);
+        }
+
+        // Logged-in user → hide reported posts
+        return entryRepo.findByCategoryWithoutReported(category, userId, pageable);
+    }
+
+
 
 }

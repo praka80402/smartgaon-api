@@ -9,7 +9,7 @@ public record ForumPostCreateDto (
       String content,
       String category,
       String area, 
-//      Set<String> tags,
+
       List<String> mediaAttachments
 ) {}
 

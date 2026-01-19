@@ -39,12 +39,45 @@ public class TalentEntryController {
     }
 
     // ---------------- FEED API (Category wise) ----------------
+//    @GetMapping("/feed")
+//    public ResponseEntity<?> getFeed(
+//            @RequestParam TalentCategory category,
+//            @RequestParam int page,
+//            @RequestParam int size
+//    ) {
+//        return ResponseEntity.ok(service.getFeed(category, page, size));
+//    }
+//    @GetMapping("/feed")
+//    public ResponseEntity<?> getFeed(
+//            @RequestParam TalentCategory category,
+//            @RequestParam int page,
+//            @RequestParam int size,
+//            @RequestParam(required = false) Long userId
+//    ) {
+//        return ResponseEntity.ok(
+//            service.getFeed(category, page, size, userId)
+//        );
+//    }
+
     @GetMapping("/feed")
     public ResponseEntity<?> getFeed(
             @RequestParam TalentCategory category,
             @RequestParam int page,
-            @RequestParam int size
+            @RequestParam int size,
+            @RequestParam(required = false) Long userId
     ) {
-        return ResponseEntity.ok(service.getFeed(category, page, size));
+        return ResponseEntity.ok(
+            service.getFeed(category, page, size, userId)
+        );
     }
+ 
+
+    
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories(
+            @RequestParam(required = false) TalentCategory first
+    ) {
+        return ResponseEntity.ok(service.getAllCategories(first));
+    }
+
 }
