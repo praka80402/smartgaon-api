@@ -1,5 +1,6 @@
 package com.smartgaon.ai.smartgaon_api.sewa.jobs;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -112,5 +113,28 @@ public ResponseEntity<?> getOpenJobs(
         service.closeJob(jobId, employerId);
         return ResponseEntity.ok("Job closed successfully");
     }
+    @PostMapping("/{jobId}/report")
+    public ResponseEntity<?> reportJob(
+            @PathVariable Long jobId,
+            @RequestParam Long reporterId,
+            @RequestParam JobReportReason reason,
+            @RequestParam(required = false) String customReason
+    ) {
+        service.reportJob(jobId, reporterId, reason, customReason);
+        return ResponseEntity.ok("Job reported successfully");
+    }
+    
+    @GetMapping("/open/user/{userId}")
+    public ResponseEntity<Page<Job>> getOpenJobsForUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        return ResponseEntity.ok(
+                service.getOpenJobsForUser(userId, page, size)
+        );
+    }
+
+
 
 }

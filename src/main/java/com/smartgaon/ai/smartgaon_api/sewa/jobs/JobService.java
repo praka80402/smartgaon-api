@@ -27,5 +27,14 @@ public interface JobService {
     );
     void closeJob(Long jobId, Long employerId);
     Page<Job> getOpenJobs(int page, int size);
+    
+    void reportJob(
+            Long jobId,
+            Long reporterId,
+            JobReportReason reason,
+            String customReason
+    );
+    Page<Job> getOpenJobsForUser(Long userId, int page, int size);
+
 
 }

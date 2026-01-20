@@ -14,10 +14,16 @@ public class JobServiceImpl implements JobService {
 
     private final JobRepository repo;
     private final JobApplicationRepository applicationRepository;
+    private final JobReportRepository jobReportRepository;
 
-    public JobServiceImpl(JobRepository repo, final JobApplicationRepository applicationRepository) {
+    public JobServiceImpl(
+            JobRepository repo,
+            JobApplicationRepository applicationRepository,
+            JobReportRepository jobReportRepository
+    ) {
         this.repo = repo;
         this.applicationRepository = applicationRepository;
+        this.jobReportRepository = jobReportRepository;
     }
 
     @Override
@@ -58,7 +64,6 @@ public class JobServiceImpl implements JobService {
         return repo.findAll();
     }
 
-
     @Override
     public void applyJob(Long jobId, Long applicantId) {
 
@@ -80,16 +85,14 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-public Page<Job> getOpenJobs(int page, int size) {
-
-    Pageable pageable = PageRequest.of(
-            page,
-            size,
-            Sort.by("createdAt").descending()
-    );
-
-    return repo.findByStatusNot("CLOSED", pageable);
-}
+    public Page<Job> getOpenJobs(int page, int size) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending()
+        );
+        return repo.findByStatusNot("CLOSED", pageable);
+    }
 
     @Override
     public List<JobApplicantResponse> getApplicants(Long jobId) {
@@ -114,6 +117,7 @@ public Page<Job> getOpenJobs(int page, int size) {
     public List<Job> getJobsByEmployer(Long employerId) {
         return repo.findByEmployerId(employerId);
     }
+
     @Override
     public void updateApplicationStatus(
             Long jobId,
@@ -134,7 +138,6 @@ public Page<Job> getOpenJobs(int page, int size) {
         Job job = repo.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
-        // 🔐 security check
         if (!job.getEmployerId().equals(employerId)) {
             throw new RuntimeException("Unauthorized");
         }
@@ -143,8 +146,48 @@ public Page<Job> getOpenJobs(int page, int size) {
         repo.save(job);
     }
 
+    // ✅ REPORT JOB
+    @Override
+    public void reportJob(
+            Long jobId,
+            Long reporterId,
+            JobReportReason reason,
+            String customReason
+    ) {
 
+        if (jobReportRepository.existsByJobIdAndReporterId(jobId, reporterId)) {
+            throw new RuntimeException("You already reported this job");
+        }
 
+        Job job = repo.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (reason == JobReportReason.OTHER &&
+            (customReason == null || customReason.trim().isEmpty())) {
+            throw new RuntimeException("Custom reason is required");
+        }
+
+        JobReport report = new JobReport();
+        report.setJob(job);
+        report.setReporterId(reporterId);
+        report.setReason(reason);
+        report.setCustomReason(
+                reason == JobReportReason.OTHER ? customReason : null
+        );
+
+        jobReportRepository.save(report);
+    }
+
+    
+    @Override
+    public Page<Job> getOpenJobsForUser(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("createdAt").descending()
+        );
+        return repo.findOpenJobsExcludingReported(userId, pageable);
+    }
 
 
 }
