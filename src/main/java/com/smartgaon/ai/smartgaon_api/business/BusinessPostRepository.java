@@ -35,4 +35,22 @@ public interface BusinessPostRepository
             @Param("limit") int limit,
             @Param("offset") int offset
     );
+    
+    @Query(value = """
+    	    SELECT * FROM business_post bp
+    	    WHERE bp.status = 'ACTIVE'
+    	    AND bp.id NOT IN (
+    	        SELECT br.business_id
+    	        FROM business_reports br
+    	        WHERE br.reporter_id = :userId
+    	    )
+    	    ORDER BY bp.created_at DESC
+    	    LIMIT :limit OFFSET :offset
+    	""", nativeQuery = true)
+    	List<BusinessPost> findPublicBusinessesExcludingReported(
+    	        @Param("userId") Long userId,
+    	        @Param("limit") int limit,
+    	        @Param("offset") int offset
+    	);
+
 }

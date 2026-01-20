@@ -93,4 +93,29 @@ public class BusinessPostController {
         service.delete(businessId, userId);
         return ResponseEntity.ok("Deleted successfully");
     }
+    
+    @PostMapping("/{businessId}/report")
+    public ResponseEntity<?> reportBusiness(
+            @PathVariable Long businessId,
+            @RequestParam Long reporterId,
+            @RequestParam BusinessReportReason reason,
+            @RequestParam(required = false) String customReason
+    ) {
+        service.reportBusiness(businessId, reporterId, reason, customReason);
+        return ResponseEntity.ok("Business reported successfully");
+    }
+    
+    @GetMapping("/public/user/{userId}")
+    public ResponseEntity<?> publicBusinessesForUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(defaultValue = "0") int offset
+    ) throws Exception {
+
+        return ResponseEntity.ok(
+                service.publicBusinessesForUser(userId, limit, offset)
+        );
+    }
+
+
 }

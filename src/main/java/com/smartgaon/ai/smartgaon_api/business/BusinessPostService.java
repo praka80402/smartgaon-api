@@ -20,6 +20,8 @@ public class BusinessPostService {
     private final BusinessPostRepository repo;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
+    private final BusinessReportRepository businessReportRepository;
+
 
     /**
      * Create business with multiple images
@@ -161,6 +163,47 @@ public class BusinessPostService {
             );
         }
     }
+
+    public void reportBusiness(
+            Long businessId,
+            Long reporterId,
+            BusinessReportReason reason,
+            String customReason
+    ) {
+
+        if (businessReportRepository
+                .existsByBusinessIdAndReporterId(businessId, reporterId)) {
+            throw new RuntimeException("You already reported this business");
+        }
+
+        BusinessPost business = repo.findById(businessId)
+                .orElseThrow(() -> new RuntimeException("Business not found"));
+
+        BusinessReport report = new BusinessReport();
+        report.setBusiness(business);
+        report.setReporterId(reporterId);
+        report.setReason(reason);
+
+        if (reason == BusinessReportReason.OTHER) {
+            report.setCustomReason(customReason);
+        }
+
+        businessReportRepository.save(report);
+    }
+    
+    
+    public List<BusinessResponse> publicBusinessesForUser(
+            Long userId,
+            int limit,
+            int offset
+    ) throws Exception {
+
+        return repo.findPublicBusinessesExcludingReported(userId, limit, offset)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+ 
 
 
     /**
