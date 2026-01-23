@@ -20,6 +20,8 @@ public interface TalentReportRepository extends JpaRepository<TalentReport, Long
     	    where r.userId = :userId
     	""")
     	List<Long> findReportedEntryIdsByUserId(Long userId);
+    
+    long countByEntryId(Long entryId);
 
 }
 

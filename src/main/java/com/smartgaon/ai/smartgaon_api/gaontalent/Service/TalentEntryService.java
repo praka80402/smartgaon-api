@@ -72,7 +72,7 @@ public class TalentEntryService {
         entry.setPhone(phone);
         entry.setUserPincode(user.getPincode());
         entry.setCategory(category);
-
+        entry.setUserId(userId);
         entry.setCompetition(isCompetition);   // NEW
         entry.setCompetitionId(isCompetition ? competitionId : null);
 
@@ -98,39 +98,98 @@ public class TalentEntryService {
         return entryRepo.findByCategory(category, pageable);
     }
     
-    public List<TalentCategory> getAllCategories(TalentCategory first) {
+    public List<TalentCategory> getAllCategories(
+            TalentCategory first,
+            Long userId
+    ) {
 
         List<TalentCategory> categories =
-                new ArrayList<>(List.of(TalentCategory.values()));
+            entryRepo.findVisibleCategories(userId);
 
         if (first != null && categories.contains(first)) {
             categories.remove(first);
-            categories.add(0, first); // ⭐ show first
+            categories.add(0, first);
         }
 
         return categories;
     }
+
  
 
     
+//    public Page<TalentEntry> getFeed(
+//            TalentCategory category,
+//            int page,
+//            int size,
+//            Long userId
+//    ) {
+//        Pageable pageable =
+//            PageRequest.of(page, size, Sort.by("createdAt").descending());
+//
+//        // If user not logged in → normal feed
+//        if (userId == null) {
+//            return entryRepo.findByCategory(category, pageable);
+//        }
+//
+//        // Logged-in user → hide reported posts
+//        return entryRepo.findByCategoryWithoutReported(category, userId, pageable);
+//    }
+
     public Page<TalentEntry> getFeed(
             TalentCategory category,
             int page,
             int size,
             Long userId
     ) {
+
         Pageable pageable =
             PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        // If user not logged in → normal feed
+        // Not logged in
         if (userId == null) {
-            return entryRepo.findByCategory(category, pageable);
+            return entryRepo.findByCategoryAndBlockedFalse(category, pageable);
         }
 
-        // Logged-in user → hide reported posts
-        return entryRepo.findByCategoryWithoutReported(category, userId, pageable);
+        // Logged in (with report logic)
+        return entryRepo.findFeedWithReportLogic(category, userId, pageable);
     }
 
+    public List<Map<String, Object>> getTopLikedCategories() {
+
+        List<Object[]> data = entryRepo.findTopLikedCategories();
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Object[] row : data) {
+
+            Map<String, Object> map = new HashMap<>();
+
+            map.put("category", row[0]);
+            map.put("likes", row[1]);
+
+            result.add(map);
+        }
+
+        return result;
+    }
+
+    public Page<TalentEntry> getAllReels(
+            int page,
+            int size,
+            Long userId
+    ) {
+
+        Pageable pageable =
+            PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        // Not logged in
+        if (userId == null) {
+            return entryRepo.findAllVisible(pageable);
+        }
+
+        // Logged in
+        return entryRepo.findAllForUser(userId, pageable);
+    }
 
 
 }

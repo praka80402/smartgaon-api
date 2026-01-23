@@ -319,9 +319,8 @@ public class ForumPostServiceImpl implements ForumPostService {
     }
     
 //   ------------------------ 
-    
-    @Override
     @Transactional
+    @Override
     public ForumPostResponse reportPost(
             Long postId,
             Long userId,
@@ -329,28 +328,43 @@ public class ForumPostServiceImpl implements ForumPostService {
             String customReason
     ) {
 
+        // Get post
         ForumPost post = postRepo.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
+        // ❌ User cannot report own post
+        if (post.getUser().getId().equals(userId)) {
+            throw new RuntimeException("You cannot report your own post");
+        }
+
+        // ❌ User cannot report same post twice
         if (reportRepo.existsByPost_PostIdAndReportedByUserId(postId, userId)) {
-            throw new RuntimeException("Already reported");
+            throw new RuntimeException("You already reported this post");
         }
 
-        if (reason == ReportReason.OTHER &&
-            (customReason == null || customReason.trim().isEmpty())) {
-            throw new RuntimeException("Custom reason required");
-        }
-
+        // ✅ Save report
         ForumPostReport report = new ForumPostReport();
         report.setPost(post);
         report.setReportedByUserId(userId);
         report.setReason(reason);
-        report.setCustomReason(reason == ReportReason.OTHER ? customReason : null);
+        report.setCustomReason(customReason);
 
         reportRepo.save(report);
+
+        // ✅ Count reports
+        long count = reportRepo.countByPost_PostId(postId);
+
+       
+        if (count >= 6 && !post.isDeleted()) {
+            post.setDeleted(true);
+            post.setStatus(ForumPost.Status.DELETED);
+            postRepo.save(post);
+        }
+
+        // ✅ Return updated post
         return map(post);
     }
-    
+
     
     @Override
     public Page<ForumPostResponse> listVisiblePostsForUser(

@@ -14,8 +14,9 @@ public class TalentEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    
     private String name;
+    private Long userId;
 //    private int age;
     private LocalDate dob;
 
@@ -40,7 +41,7 @@ public class TalentEntry {
     private Integer likes = 0;
 
  
-
+    private boolean blocked = false;
 
     private boolean isWinner = false;
 

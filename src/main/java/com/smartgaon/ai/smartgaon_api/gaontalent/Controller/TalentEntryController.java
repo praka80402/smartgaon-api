@@ -39,25 +39,6 @@ public class TalentEntryController {
     }
 
     // ---------------- FEED API (Category wise) ----------------
-//    @GetMapping("/feed")
-//    public ResponseEntity<?> getFeed(
-//            @RequestParam TalentCategory category,
-//            @RequestParam int page,
-//            @RequestParam int size
-//    ) {
-//        return ResponseEntity.ok(service.getFeed(category, page, size));
-//    }
-//    @GetMapping("/feed")
-//    public ResponseEntity<?> getFeed(
-//            @RequestParam TalentCategory category,
-//            @RequestParam int page,
-//            @RequestParam int size,
-//            @RequestParam(required = false) Long userId
-//    ) {
-//        return ResponseEntity.ok(
-//            service.getFeed(category, page, size, userId)
-//        );
-//    }
 
     @GetMapping("/feed")
     public ResponseEntity<?> getFeed(
@@ -75,9 +56,35 @@ public class TalentEntryController {
     
     @GetMapping("/categories")
     public ResponseEntity<?> getCategories(
-            @RequestParam(required = false) TalentCategory first
+            @RequestParam(required = false) TalentCategory first,
+            @RequestParam(required = false) Long userId
     ) {
-        return ResponseEntity.ok(service.getAllCategories(first));
+
+        return ResponseEntity.ok(
+            service.getAllCategories(first, userId)
+        );
     }
+
+    
+    @GetMapping("/categories/top-liked")
+    public ResponseEntity<?> topLikedCategories() {
+
+        return ResponseEntity.ok(
+            service.getTopLikedCategories()
+        );
+    }
+
+    @GetMapping("/feed/all")
+    public ResponseEntity<?> getAllReels(
+            @RequestParam int page,
+            @RequestParam int size,
+            @RequestParam(required = false) Long userId
+    ) {
+
+        return ResponseEntity.ok(
+            service.getAllReels(page, size, userId)
+        );
+    }
+
 
 }

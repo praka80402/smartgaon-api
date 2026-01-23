@@ -9,4 +9,5 @@ public interface ForumPostReportRepository extends JpaRepository<ForumPostReport
     boolean existsByPost_PostIdAndReportedByUserId(Long postId, Long userId);
 
     List<ForumPostReport> findByReportedByUserId(Long userId);
+    long countByPost_PostId(Long postId);
 }
