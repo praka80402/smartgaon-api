@@ -234,6 +234,71 @@ public class AuthController {
     }
 
     // =====================================================
+// CHECK ACCOUNT STATUS (ACTIVE / DISABLED / DELETED)
+// =====================================================
+    @PostMapping("/account-status")
+    public ResponseEntity<?> checkAccountStatus(@RequestBody Map<String, String> req) {
+
+        String phone = req.get("phone");
+        String email = req.get("email");
+
+        Optional<User> userOpt = Optional.empty();
+
+        if (phone != null && !phone.isBlank()) {
+            userOpt = auth.findByPhone(phone);
+        }
+        else if (email != null && !email.isBlank()) {
+            userOpt = auth.findByEmail(email);
+        }
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.ok(
+                    Map.of(
+                            "exists", false,
+                            "status", "NOT_FOUND",
+                            "allowed", false
+                    )
+            );
+        }
+
+        User user = userOpt.get();
+
+        // 🛑 DELETED
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            return ResponseEntity.ok(
+                    Map.of(
+                            "exists", true,
+                            "status", "DELETED",
+                            "allowed", false,
+                            "deletedBy", user.getDeletedBy()
+                    )
+            );
+        }
+
+        // 🛑 DISABLED (if you have this flag)
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+            return ResponseEntity.ok(
+                    Map.of(
+                            "exists", true,
+                            "status", "DISABLED",
+                            "allowed", false,
+                            "reason", "Account disabled by admin"
+                    )
+            );
+        }
+
+        // ✅ ACTIVE
+        return ResponseEntity.ok(
+                Map.of(
+                        "exists", true,
+                        "status", "ACTIVE",
+                        "allowed", true
+                )
+        );
+    }
+
+
+    // =====================================================
     // DELETE ACCOUNT
     // =====================================================
     @DeleteMapping("/delete/{phone}")
