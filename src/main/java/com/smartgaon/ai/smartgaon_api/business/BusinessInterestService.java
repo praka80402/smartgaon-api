@@ -15,10 +15,14 @@ public class BusinessInterestService {
 
         if (repo.existsByBusinessIdAndUserId(
                 req.getBusinessId(), req.getUserId())) {
-            throw new RuntimeException("Already applied");
+
+            throw new RuntimeException(
+                "You have already shown interest in this business"
+            );
         }
 
         BusinessInterest interest = new BusinessInterest();
+
         interest.setBusinessId(req.getBusinessId());
         interest.setUserId(req.getUserId());
         interest.setName(req.getName());
@@ -28,17 +32,22 @@ public class BusinessInterestService {
         repo.save(interest);
     }
 
+//    public List<BusinessInterestResponse> applicants(Long businessId) {
+//
+//        return repo.findByBusinessIdOrderByCreatedAtDesc(businessId)
+//                .stream()
+//                .map(i -> new BusinessInterestResponse(
+//                        i.getId(),
+//                        i.getName(),
+//                        i.getPhone(),
+//                        i.getMessage(),
+//                        i.getCreatedAt()
+//                ))
+//                .toList();
+//    }
+    
     public List<BusinessInterestResponse> applicants(Long businessId) {
-
-        return repo.findByBusinessIdOrderByCreatedAtDesc(businessId)
-                .stream()
-                .map(i -> new BusinessInterestResponse(
-                        i.getId(),
-                        i.getName(),
-                        i.getPhone(),
-                        i.getMessage(),
-                        i.getCreatedAt()
-                ))
-                .toList();
+        return repo.findApplicantsWithProfile(businessId);
     }
+
 }

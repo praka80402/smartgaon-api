@@ -73,6 +73,7 @@ public class AuthService {
      user.setLastName(req.getOrDefault("lastName", user.getLastName()));
      user.setPhone(req.getOrDefault("phone", user.getPhone()));
      user.setState(req.getOrDefault("state", user.getState()));
+     user.setEmail(req.getOrDefault("email", user.getEmail()));
      user.setDistrict(req.getOrDefault("district", user.getDistrict()));
      user.setArea(req.getOrDefault("area", user.getArea()));
      user.setPincode(req.getOrDefault("pincode", user.getPincode()));
@@ -81,6 +82,13 @@ public class AuthService {
      user.setProfileImageUrl(
              req.getOrDefault("profileImageUrl", user.getProfileImageUrl())
      );
+     
+//     if (req.containsKey("email") && user.getEmail() == null) {
+//         String email = req.get("email");
+//         if (email != null && !email.isBlank()) {
+//             user.setEmail(email);
+//         }
+//     }
 
      // Mark profile completed
      user.setProfileCompleted(true);

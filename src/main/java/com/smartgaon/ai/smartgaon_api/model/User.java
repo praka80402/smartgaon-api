@@ -78,4 +78,11 @@ public class User {
     
     @Column(name = "account_enabled")
     private Boolean accountEnabled = true;
+    
+    @Column(name = "firebase_uid", unique = true)
+    private String firebaseUid;
+
+    @Column(name = "auth_provider")
+    private String authProvider; // GOOGLE, EMAIL, PHONE
+
 }

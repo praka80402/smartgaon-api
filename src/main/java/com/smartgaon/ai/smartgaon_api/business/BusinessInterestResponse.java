@@ -12,5 +12,6 @@ public class BusinessInterestResponse {
     private String name;
     private String phone;
     private String message;
+    private String profileImageUrl;
     private LocalDateTime appliedAt;
 }

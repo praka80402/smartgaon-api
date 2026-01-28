@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/business-interest")
 @RequiredArgsConstructor
@@ -13,11 +15,11 @@ public class BusinessInterestController {
 
     @PostMapping("/apply")
     public ResponseEntity<?> apply(
-            @RequestBody ApplyBusinessInterestRequest req
+            @Valid @RequestBody ApplyBusinessInterestRequest req
     ) {
         try {
             service.apply(req);
-            return ResponseEntity.ok("Interest submitted");
+            return ResponseEntity.ok("Interest submitted successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

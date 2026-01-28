@@ -27,6 +27,7 @@ public class BusinessInterest {
 
     private String name;
     private String phone;
+    private String profileImageUrl;
 
     @Column(columnDefinition = "TEXT")
     private String message;
