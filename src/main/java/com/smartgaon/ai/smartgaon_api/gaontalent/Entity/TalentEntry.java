@@ -39,8 +39,11 @@ public class TalentEntry {
 
     private Integer comments = 0;
     private Integer likes = 0;
+    private String processingStatus;
 
- 
+    private String thumbnailUrl;
+
+    private String lowQualityVideoUrl;
     private boolean blocked = false;
 
     private boolean isWinner = false;

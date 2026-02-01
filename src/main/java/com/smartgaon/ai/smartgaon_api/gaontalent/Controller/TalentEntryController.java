@@ -38,6 +38,26 @@ public class TalentEntryController {
         );
     }
 
+
+    @PostMapping(value = "/partiSns", consumes = "multipart/form-data")
+    public ResponseEntity<?> participateWithSns(
+            @RequestParam Long userId,
+            @RequestParam String name,
+            @RequestParam String dob,
+            @RequestParam String villageOrArea,
+            @RequestParam String phone,
+            @RequestParam TalentCategory category,
+            @RequestParam(required = false) Long competitionId,
+            @RequestParam boolean isCompetition,
+            @RequestParam MultipartFile profileImage,
+            @RequestParam MultipartFile media
+    ) throws Exception {
+
+        return ResponseEntity.ok(
+                service.participatewithSNS(userId,name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
+        );
+    }
+
     // ---------------- FEED API (Category wise) ----------------
 
     @GetMapping("/feed")

@@ -1,5 +1,6 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Service;
 
+import com.smartgaon.ai.smartgaon_api.s3.VideoSnsPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,7 @@ public class TalentEntryService {
     private final TalentCompetitionRepository compRepo;
     private final ReferenceNumberService referenceService;
     private final S3Service s3Service;
+    private final VideoSnsPublisher snsPublisher;
     private final UserRepository userRepository;
 
     private final List<String> imageTypes = List.of("jpg", "jpeg", "png");
@@ -86,6 +88,79 @@ public class TalentEntryService {
         entryRepo.save(entry);
 
         return "Thank you for participating! Your reference number is: " + ref;
+    }
+
+
+    public String participatewithSNS(
+            Long userId,
+            String name,
+            LocalDate dob,
+            String villageOrArea,
+            String phone,
+            TalentCategory category,
+            Long competitionId,
+            boolean isCompetition,
+            MultipartFile profileImage,
+            MultipartFile media
+    ) throws Exception {
+
+        // 1️⃣ Validate user
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new Exception("User not found"));
+
+        if (isCompetition) {
+            if (competitionId == null)
+                throw new Exception("Competition ID is required.");
+
+            compRepo.findById(competitionId)
+                    .orElseThrow(() -> new Exception("Invalid competition"));
+        }
+
+        String ext = getExt(media);
+
+        if (category == TalentCategory.ART && !imageTypes.contains(ext))
+            throw new Exception("ART needs image file.");
+
+        if (category != TalentCategory.ART && !videoTypes.contains(ext))
+            throw new Exception("This category requires video file.");
+
+        // 2️⃣ Upload profile image (small → immediate)
+        String profileUrl = s3Service.uploadFile(profileImage);
+
+        // 3️⃣ Upload RAW video (NOT optimized)
+        String rawVideoUrl = s3Service.uploadFile(media);
+        // e.g. s3://bucket/raw-videos/{uuid}.mp4
+
+        // 4️⃣ Save DB entry (media not ready yet)
+        TalentEntry entry = new TalentEntry();
+        entry.setName(name);
+        entry.setDob(dob);
+        entry.setVillageOrArea(villageOrArea);
+        entry.setPhone(phone);
+        entry.setUserPincode(user.getPincode());
+        entry.setCategory(category);
+        entry.setUserId(userId);
+        entry.setCompetition(isCompetition);
+        entry.setCompetitionId(isCompetition ? competitionId : null);
+
+        entry.setProfileImageUrl(profileUrl);
+        entry.setMediaUrl(rawVideoUrl);           // raw for now
+        entry.setMediaType(ext);
+        entry.setProcessingStatus("PROCESSING");  // ⭐ NEW
+
+        String ref = referenceService.generate();
+        entry.setReferenceNumber(ref);
+
+        entryRepo.save(entry);
+
+        // 5️⃣ Publish SNS event (async processing)
+        snsPublisher.publishVideoProcessingEvent(
+                entry.getId(),
+                rawVideoUrl,
+                category.name()
+        );
+
+        return "Video uploaded. Processing started. Ref: " + ref;
     }
 
 
