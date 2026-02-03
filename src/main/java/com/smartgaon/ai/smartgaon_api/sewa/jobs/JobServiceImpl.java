@@ -91,7 +91,13 @@ public class JobServiceImpl implements JobService {
                 size,
                 Sort.by("createdAt").descending()
         );
-        return repo.findByStatusNot("CLOSED", pageable);
+        return repo.findByStatusNotAndDeadlineAfter(
+                "CLOSED",
+                LocalDateTime.now(),
+                pageable
+        );
+
+//        return repo.findByStatusNot("CLOSED", pageable);
     }
 
     @Override
@@ -181,12 +187,14 @@ public class JobServiceImpl implements JobService {
     
     @Override
     public Page<Job> getOpenJobsForUser(Long userId, int page, int size) {
+
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by("createdAt").descending()
         );
-        return repo.findOpenJobsExcludingReported(userId, pageable);
+
+        return repo.findActiveJobsExcludingReported(userId, pageable);
     }
 
 

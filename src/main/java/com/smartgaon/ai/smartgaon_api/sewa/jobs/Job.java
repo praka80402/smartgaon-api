@@ -24,7 +24,8 @@ public class Job {
     private String employmentType;
     private String location;
     private String contactNumber;
-    private String deadline;
+//    private String deadline;
+    private LocalDateTime deadline;
     private String status;
 
     private LocalDateTime createdAt = LocalDateTime.now();

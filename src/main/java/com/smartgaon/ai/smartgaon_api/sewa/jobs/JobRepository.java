@@ -7,41 +7,35 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 
 public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findByEmployerId(Long employerId);
-      Page<Job> findByStatusNot(String status, Pageable pageable);
-      
-//      @Query("""
-//      	    SELECT j FROM Job j
-//      	    WHERE j.status <> 'CLOSED'
-//      	      AND j.id NOT IN (
-//      	          SELECT r.jobId FROM JobReport r
-//      	          WHERE r.reportedBy = :userId
-//      	      )
-//      	""")
-//      	Page<Job> findOpenJobsExcludingReported(
-//      	        @Param("userId") Long userId,
-//      	        Pageable pageable
-//      	);
-      
-      @Query("""
-    	        SELECT j
-    	        FROM Job j
-    	        WHERE j.status <> 'CLOSED'
-    	        AND j.id NOT IN (
-    	            SELECT jr.job.id
-    	            FROM JobReport jr
-    	            WHERE jr.reporterId = :userId
-    	        )
-    	    """)
-    	    Page<Job> findOpenJobsExcludingReported(
-    	            @Param("userId") Long userId,
-    	            Pageable pageable
-    	    );
-      
 
+    Page<Job> findByStatusNot(String status, Pageable pageable);
+
+    // ✅ Active + Not Reported + Not Closed + Not Expired
+    @Query("""
+        SELECT j
+        FROM Job j
+        WHERE j.status <> 'CLOSED'
+        AND j.deadline > CURRENT_TIMESTAMP
+        AND j.id NOT IN (
+            SELECT jr.job.id
+            FROM JobReport jr
+            WHERE jr.reporterId = :userId
+        )
+    """)
+    Page<Job> findActiveJobsExcludingReported(
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
+    Page<Job> findByStatusNotAndDeadlineAfter(
+            String status,
+            LocalDateTime time,
+            Pageable pageable
+    );
 
 }
