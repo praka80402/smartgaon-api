@@ -149,16 +149,19 @@ public class TalentEntryService {
         entry.setProcessingStatus("PROCESSING");  // ⭐ NEW
 
         String ref = referenceService.generate();
-        entry.setReferenceNumber(ref);
+entry.setReferenceNumber(ref);
 
-        entryRepo.save(entry);
+// 🔥 THIS IS THE KEY FIX
+entry.setMediaConvertGuid(ref);   
 
-        // 5️⃣ Publish SNS event (async processing)
-        snsPublisher.publishVideoProcessingEvent(
-                entry.getId(),
-                rawVideoUrl,
-                category.name()
-        );
+entryRepo.save(entry);
+
+
+snsPublisher.publishVideoProcessingEvent(
+    entry.getId(),       
+    rawVideoUrl,
+    category.name()
+);
 
         return "Video uploaded. Processing started. Ref: " + ref;
     }

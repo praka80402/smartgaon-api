@@ -14,6 +14,8 @@ public class TalentEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "media_convert_guid")
+    private String mediaConvertGuid;
     
     private String name;
     private Long userId;

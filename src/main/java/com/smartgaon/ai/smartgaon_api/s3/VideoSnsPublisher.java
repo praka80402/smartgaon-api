@@ -44,4 +44,27 @@ public class VideoSnsPublisher {
                         .build()
         );
     }
+
+    public void publishVideoProcessedEvent(
+        Long entryId,
+        String thumbnailUrl,
+        String lowQualityVideoUrl
+) {
+    String message = """
+    {
+      "entryId": %d,
+      "thumbnailUrl": "%s",
+      "lowQualityVideoUrl": "%s",
+      "status": "READY"
+    }
+    """.formatted(entryId, thumbnailUrl, lowQualityVideoUrl);
+
+    snsClient.publish(
+            PublishRequest.builder()
+                    .topicArn(topicArn)
+                    .message(message)
+                    .build()
+    );
+}
+
 }

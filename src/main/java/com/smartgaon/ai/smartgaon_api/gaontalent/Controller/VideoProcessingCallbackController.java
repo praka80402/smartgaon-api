@@ -1,21 +1,18 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Controller;
 
-import java.util.Map;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentEntry;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.TalentEntryRepository;
-import com.smartgaon.ai.smartgaon_api.gaontalent.dto.VideoProcessingCallbackRequest;
 
 //import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequestMapping("/api/video")
 @RequiredArgsConstructor
@@ -23,50 +20,73 @@ public class VideoProcessingCallbackController {
 
     private final TalentEntryRepository entryRepo;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/processing-callback")
-    public ResponseEntity<?> onCallback(
-            @org.springframework.web.bind.annotation.RequestBody Map<String, Object> payload
-    ) {
+    public ResponseEntity<String> onCallback(
+            @org.springframework.web.bind.annotation.RequestBody String body) {
 
-        String type = (String) payload.get("Type");
+        try {
+            JsonNode root = objectMapper.readTree(body);
+            String type = root.path("Type").asText();
 
-        // ✅ 1️⃣ SNS subscription confirmation
-        if ("SubscriptionConfirmation".equals(type)) {
+            System.out.println("RAW SNS BODY = " + body);
 
-            String subscribeUrl = (String) payload.get("SubscribeURL");
-            restTemplate.getForObject(subscribeUrl, String.class);
-
-            return ResponseEntity.ok("SNS subscription confirmed");
-        }
-
-        // ✅ 2️⃣ Actual notification (video processed)
-        if ("Notification".equals(type)) {
-
-            String message = (String) payload.get("Message");
-
-            // Message is STRING → parse JSON
-            ObjectMapper mapper = new ObjectMapper();
-            VideoProcessingCallbackRequest request;
-
-            try {
-                request = mapper.readValue(message, VideoProcessingCallbackRequest.class);
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body("Invalid message format");
+            // 1️⃣ Subscription confirmation
+            if ("SubscriptionConfirmation".equals(type)) {
+                String subscribeUrl = root.path("SubscribeURL").asText();
+                restTemplate.getForObject(subscribeUrl, String.class);
+                return ResponseEntity.ok("SNS subscription confirmed");
             }
 
-            TalentEntry entry = entryRepo.findById(request.getEntryId())
-                    .orElseThrow(() -> new RuntimeException("Entry not found"));
+            // 2️⃣ Notification
+            if ("Notification".equals(type)) {
 
-            entry.setThumbnailUrl(request.getThumbnailUrl());
-            entry.setLowQualityVideoUrl(request.getLowQualityVideoUrl());
-            entry.setProcessingStatus("READY");
+                JsonNode messageNode =
+                        objectMapper.readTree(root.path("Message").asText());
 
-            entryRepo.save(entry);
+                System.out.println("SNS MESSAGE = " + messageNode.toPrettyString());
 
-            return ResponseEntity.ok("Video processing updated");
+                // 🔑 srcVideo is the only reliable mapper
+                String srcVideo = messageNode.path("srcVideo").asText(null);
+                if (srcVideo == null) {
+                    return ResponseEntity.ok("Ignored: no srcVideo");
+                }
+
+                String fullS3Url =
+                        "https://smartgaonvideosconverter-source71e471f1-ky0nypesuuxx.s3.ap-south-1.amazonaws.com/"
+                                + srcVideo;
+
+                TalentEntry entry = entryRepo.findByMediaUrl(fullS3Url)
+                        .orElseThrow(() ->
+                                new RuntimeException("Entry not found for srcVideo: " + srcVideo)
+                        );
+
+                // 🖼 Thumbnail (safe)
+                JsonNode thumbs = messageNode.path("thumbNailsUrls");
+                if (thumbs.isArray() && thumbs.size() > 0) {
+                    entry.setThumbnailUrl(thumbs.get(0).asText());
+                }
+
+                // 🎥 Low quality video (HLS)
+                String hlsUrl =
+                        messageNode.path("egressEndpoints").path("HLS").asText(null);
+                if (hlsUrl != null) {
+                    entry.setLowQualityVideoUrl(hlsUrl);
+                }
+
+                entry.setProcessingStatus("READY");
+                entryRepo.save(entry);
+
+                return ResponseEntity.ok("Video processing updated");
+            }
+
+            return ResponseEntity.ok("Ignored");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // ❗ SNS expects 200, warna retry storm
+            return ResponseEntity.ok("Handled");
         }
-
-        return ResponseEntity.ok("Ignored");
     }
 }
