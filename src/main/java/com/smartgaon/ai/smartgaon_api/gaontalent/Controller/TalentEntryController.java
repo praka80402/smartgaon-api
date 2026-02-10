@@ -106,5 +106,29 @@ public class TalentEntryController {
         );
     }
 
+ // ---------------- DELETE API ----------------
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteEntry(
+            @PathVariable Long id,
+            @RequestParam Long userId
+    ) throws Exception {
+
+        service.deleteEntry(id, userId);
+
+        return ResponseEntity.ok("Entry deleted successfully.");
+    }
+    
+ // ---------------- SHARE API ----------------
+    @GetMapping("/share/{id}")
+    public ResponseEntity<?> shareEntry(
+            @PathVariable Long id
+    ) throws Exception {
+
+        return ResponseEntity.ok(
+                service.getShareLink(id)
+        );
+    }
+
+
 
 }

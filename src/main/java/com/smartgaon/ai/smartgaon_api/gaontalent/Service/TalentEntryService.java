@@ -268,6 +268,46 @@ snsPublisher.publishVideoProcessingEvent(
         // Logged in
         return entryRepo.findAllForUser(userId, pageable);
     }
+    
+ // ---------------- DELETE ENTRY ----------------
+    public void deleteEntry(Long entryId, Long userId) throws Exception {
+
+        TalentEntry entry = entryRepo.findById(entryId)
+                .orElseThrow(() -> new Exception("Entry not found"));
+
+        // Only owner can delete
+        if (!entry.getUserId().equals(userId)) {
+            throw new Exception("You are not authorized to delete this entry");
+        }
+
+        // Delete files from S3
+        if (entry.getProfileImageUrl() != null)
+            s3Service.deleteFile(entry.getProfileImageUrl());
+
+        if (entry.getMediaUrl() != null)
+            s3Service.deleteFile(entry.getMediaUrl());
+
+        // Delete DB record
+        entryRepo.delete(entry);
+    }
+
+    
+ // ---------------- SHARE LINK ----------------
+    public Map<String, String> getShareLink(Long entryId) throws Exception {
+
+        TalentEntry entry = entryRepo.findById(entryId)
+                .orElseThrow(() -> new Exception("Entry not found"));
+
+        String shareUrl = "https://smartgaonai.com/talent/" + entry.getId();
+
+        Map<String, String> result = new HashMap<>();
+        result.put("shareUrl", shareUrl);
+        result.put("name", entry.getName());
+        result.put("category", entry.getCategory().name());
+
+        return result;
+    }
+
 
 
 }
