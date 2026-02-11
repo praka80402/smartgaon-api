@@ -53,4 +53,8 @@ public class Scheme {
 
     @Column(name = "scheme_url")
     private String schemeUrl;
+    
+    @Column(name = "interest_count")
+    private Long interestCount = 0L;
+
 }
