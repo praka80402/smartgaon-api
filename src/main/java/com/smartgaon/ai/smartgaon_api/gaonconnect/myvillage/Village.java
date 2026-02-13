@@ -1,5 +1,9 @@
 package com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage;
 
+import java.util.List;
+
+import com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.villagedevelopment.VillageDevelopment;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,4 +29,14 @@ public class Village {
 
     @Column(columnDefinition = "LONGTEXT")
     private String imageFiles;
+    
+    
+    @OneToMany(
+    	    mappedBy = "village",
+    	    cascade = CascadeType.ALL,
+    	    orphanRemoval = true,
+    	    fetch = FetchType.EAGER
+    	)
+    	private List<VillageDevelopment> developments;
+
 }
