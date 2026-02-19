@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+//import java.time.LocalDateTime;
 
 
 public interface JobRepository extends JpaRepository<Job, Long> {
@@ -34,7 +35,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     );
     Page<Job> findByStatusNotAndDeadlineAfter(
             String status,
-            LocalDateTime time,
+            LocalDate date,
+//            LocalDateTime time,
             Pageable pageable
     );
 

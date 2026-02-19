@@ -3,7 +3,7 @@ package com.smartgaon.ai.smartgaon_api.sewa.jobs;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-
+import java.time.LocalDate;
 @Data
 @Entity
 @Table(name = "jobs")
@@ -25,7 +25,8 @@ public class Job {
     private String location;
     private String contactNumber;
 //    private String deadline;
-    private LocalDateTime deadline;
+    private LocalDate deadline;
+
     private String status;
 
     private LocalDateTime createdAt = LocalDateTime.now();
