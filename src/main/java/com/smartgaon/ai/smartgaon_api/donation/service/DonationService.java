@@ -308,7 +308,7 @@ public class DonationService {
     /* =====================================================
        DONATE (GENERATE UTR)
        ===================================================== */
-
+    
     public DonateResponse donate(Long userId, DonateRequest request){
 
         User user = userRepo.findById(userId)
@@ -316,6 +316,15 @@ public class DonationService {
 
         DonationCampaign campaign = campaignRepo.findById(request.getCampaignId())
                 .orElseThrow(() -> new RuntimeException("Campaign not found"));
+
+        // 🚨 VALIDATION
+        double remainingAmount = campaign.getTargetAmount() - campaign.getRaisedAmount();
+
+        if(request.getAmount() > remainingAmount){
+            throw new RuntimeException(
+                    "Donation exceeds remaining campaign amount. Remaining: " + remainingAmount
+            );
+        }
 
         String utr = generateUTR();
 
@@ -337,6 +346,36 @@ public class DonationService {
                 .message("Donation submitted. Waiting for admin verification")
                 .build();
     }
+
+
+//    public DonateResponse donate(Long userId, DonateRequest request){
+//
+//        User user = userRepo.findById(userId)
+//                .orElseThrow(() -> new RuntimeException("User not found"));
+//
+//        DonationCampaign campaign = campaignRepo.findById(request.getCampaignId())
+//                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+//
+//        String utr = generateUTR();
+//
+//        DonationTransaction tx = new DonationTransaction();
+//        tx.setUser(user);
+//        tx.setCampaign(campaign);
+//        tx.setAmount(request.getAmount());
+//        tx.setUtrNumber(utr);
+//        tx.setPaymentId("MANUAL");
+//        tx.setStatus(TransactionStatus.PENDING);
+//        tx.setDonatedAt(LocalDateTime.now());
+//        tx.setFinancialYear(calculateFY());
+//
+//        txRepo.save(tx);
+//
+//        return DonateResponse.builder()
+//                .transactionId(tx.getId())
+//                .utrNumber(utr)
+//                .message("Donation submitted. Waiting for admin verification")
+//                .build();
+//    }
 
     /* =====================================================
        USER DONATIONS
