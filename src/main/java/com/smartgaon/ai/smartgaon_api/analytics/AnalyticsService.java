@@ -18,40 +18,65 @@ public class AnalyticsService {
     private final AnalyticsConfig config;
     private final RestTemplate restTemplate;
 
-    public void sendEvent(String clientId,
-                      String eventName,
-                      Map<String, Object> params) {
+ public void sendScreenViewEvent(String clientId,
+                                String screenName,
+                                String screenClass,
+                                String platform,
+                                String methodType) {
 
     String url = "https://www.google-analytics.com/mp/collect"
             + "?measurement_id=" + config.getMeasurementId()
             + "&api_secret=" + config.getApiSecret();
 
-    Map<String, Object> payload = Map.of(
-            "client_id", clientId,
-            "events", List.of(
-                    Map.of(
-                            "name", eventName.toLowerCase(),
-                            "params", params
-                    )
-            )
-    );
-
-    restTemplate.postForObject(url, payload, String.class);
-}
-
-public void trackScreenView(String clientId,
-                            String screenName,
-                            String screenClass,
-                            String platform,
-                            String methodType) {
-
+    // Build event parameters
     Map<String, Object> params = new HashMap<>();
     params.put("screen_name", screenName);
     params.put("firebase_screen_class", screenClass);
     params.put("platform", platform);
     params.put("method_type", methodType);
 
-    sendEvent(clientId, "screen_view", params);
+    // Optional (for instant testing in DebugView)
+    params.put("debug_mode", 1);
+
+    // Build full payload
+    Map<String, Object> event = new HashMap<>();
+    event.put("name", "screen_view");
+    event.put("params", params);
+
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("client_id", clientId);
+    payload.put("events", List.of(event));
+
+    // Send request
+    restTemplate.postForObject(url, payload, String.class);
+}
+
+public void sendPageViewEvent(String clientId,
+                              String pageUrl,
+                              String pageTitle,
+                              String platform,
+                              String methodType) {
+
+    String url = "https://www.google-analytics.com/mp/collect"
+            + "?measurement_id=" + config.getMeasurementId()
+            + "&api_secret=" + config.getApiSecret();
+
+    Map<String, Object> params = new HashMap<>();
+    params.put("page_location", pageUrl);
+    params.put("page_title", pageTitle);
+    params.put("platform", platform);
+    params.put("method_type", methodType);
+    params.put("debug_mode", 1);
+
+    Map<String, Object> event = new HashMap<>();
+    event.put("name", "page_view");
+    event.put("params", params);
+
+    Map<String, Object> payload = new HashMap<>();
+    payload.put("client_id", clientId);
+    payload.put("events", List.of(event));
+
+    restTemplate.postForObject(url, payload, String.class);
 }
     
 }

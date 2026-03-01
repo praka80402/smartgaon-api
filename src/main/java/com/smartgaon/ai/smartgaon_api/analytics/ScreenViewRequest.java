@@ -9,4 +9,5 @@ public class ScreenViewRequest {
     private String screenName;
     private String screenClass;
     private String methodType;
+    private String platform;
 }

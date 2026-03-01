@@ -1,10 +1,8 @@
 package com.smartgaon.ai.smartgaon_api.analytics;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/analytics")
@@ -13,35 +11,58 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
+    // ✅ 1️⃣ Page View Tracking (Web)
     @PostMapping("/track")
-    public String trackEvent(@RequestBody AnalyticsRequest request) {
+    public ResponseEntity<?> trackEvent(@RequestBody AnalyticsRequest request) {
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("method_type", request.getMethodType());
-        params.put("platform", request.getPlatform());
+        if (request.getClientId() == null || request.getEventName() == null) {
+            return ResponseEntity.badRequest()
+                    .body("clientId and eventName are required");
+        }
 
-        analyticsService.sendEvent(
-                request.getClientId(),
-                request.getEventName(),
-                params);
+        try {
 
-        return "Event Sent";
+            // If this endpoint is meant for page view
+            analyticsService.sendPageViewEvent(
+                    ""+request.getClientId(),
+                    ""+request.getEventName(),     // page_location
+                    ""+request.getClass(),   // page_title
+                    ""+request.getPlatform(),
+                    ""+request.getMethodType()
+            );
+
+            return ResponseEntity.ok("Page View Event Sent Successfully");
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Analytics event failed: " + e.getMessage());
+        }
     }
+
+    // ✅ 2️⃣ Screen View Tracking (Mobile)
     @PostMapping("/screen")
-    public String trackScreen(@RequestBody ScreenViewRequest request) {
+    public ResponseEntity<?> trackScreen(@RequestBody ScreenViewRequest request) {
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("screen_name", request.getScreenName());
-        params.put("firebase_screen_class", request.getScreenClass());
-        params.put("platform", "mobile");
-        params.put("method_type", request.getMethodType());
+        if (request.getClientId() == null || request.getScreenName() == null) {
+            return ResponseEntity.badRequest()
+                    .body("clientId and screenName are required");
+        }
 
-        analyticsService.sendEvent(
-                request.getClientId(),
-                "screen_view",
-                params
-        );
+        try {
 
-        return "Screen View Event Sent";
+            analyticsService.sendScreenViewEvent(
+                    request.getClientId(),
+                    request.getScreenName(),
+                    request.getScreenClass(),
+                    request.getPlatform(),
+                    request.getMethodType()
+            );
+
+            return ResponseEntity.ok("Screen View Event Sent Successfully");
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Screen analytics failed: " + e.getMessage());
+        }
     }
 }
