@@ -21,12 +21,9 @@ public class AnalyticsController {
         }
 
         try {
-
-            // If this endpoint is meant for page view
             analyticsService.sendPageViewEvent(
                     ""+request.getClientId(),
                     ""+request.getEventName(),     // page_location
-                    ""+request.getClass(),   // page_title
                     ""+request.getPlatform(),
                     ""+request.getMethodType()
             );

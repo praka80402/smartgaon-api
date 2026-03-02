@@ -35,8 +35,6 @@ public class AnalyticsService {
     params.put("platform", platform);
     params.put("method_type", methodType);
 
-    // Optional (for instant testing in DebugView)
-    params.put("debug_mode", 1);
 
     // Build full payload
     Map<String, Object> event = new HashMap<>();
@@ -52,8 +50,7 @@ public class AnalyticsService {
 }
 
 public void sendPageViewEvent(String clientId,
-                              String pageUrl,
-                              String pageTitle,
+                              String eventName,
                               String platform,
                               String methodType) {
 
@@ -62,11 +59,9 @@ public void sendPageViewEvent(String clientId,
             + "&api_secret=" + config.getApiSecret();
 
     Map<String, Object> params = new HashMap<>();
-    params.put("page_location", pageUrl);
-    params.put("page_title", pageTitle);
+    params.put("page_location", eventName);
     params.put("platform", platform);
     params.put("method_type", methodType);
-    params.put("debug_mode", 1);
 
     Map<String, Object> event = new HashMap<>();
     event.put("name", "page_view");
