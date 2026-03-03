@@ -1,16 +1,16 @@
 package com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.villagedevelopment;
 
+
+import jakarta.persistence.*;
+import lombok.Data;
+
+import java.util.List;
+
 import com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.Village;
 import com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.development.Development;
 
-import jakarta.persistence.*;
-import lombok.*;
-
 @Entity
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class VillageDevelopment {
 
     @Id
@@ -25,11 +25,16 @@ public class VillageDevelopment {
     @JoinColumn(name = "development_id")
     private Development development;
 
-    @Column(columnDefinition = "TEXT")
-    private String workDescription;
-
-    @Column(columnDefinition = "TEXT")
-    private String benefit;
-
     private Integer progressPercent;
+
+    private String remarks;
+
+    // ✅ Gallery Images (Max 20)
+    @ElementCollection
+    @CollectionTable(
+            name = "village_development_gallery",
+            joinColumns = @JoinColumn(name = "village_development_id")
+    )
+    @Column(name = "image_url")
+    private List<String> galleryImages;
 }

@@ -1,5 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,6 +15,8 @@ public interface VillageRepository extends JpaRepository<Village, Long> {
       AND v.state LIKE :state
 """)
     Page<Village> searchVillages(String name, String city, String state, Pageable pageable);
+    
+    List<Village> findBySmartGaonTrue();
 
 }
 

@@ -5,22 +5,26 @@ import lombok.*;
 import java.time.LocalDate;
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter
+@Setter
+@Table(name = "development_phase")
 public class Development {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Integer phaseNumber;
+
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 3000)
     private String description;
 
-    private String imageUrl;
+    @Enumerated(EnumType.STRING)
+    private PhaseStatus status;
 
-    private LocalDate createdDate;
+    private LocalDate startDate;
+
+    private LocalDate endDate;
 }

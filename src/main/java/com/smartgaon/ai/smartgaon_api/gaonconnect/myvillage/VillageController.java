@@ -1,49 +1,46 @@
 package com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage;
 
-import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/villages")
 @RequiredArgsConstructor
+@CrossOrigin
 public class VillageController {
 
     private final VillageService service;
-    private final S3Service s3Service;
 
-    /** =======================
-     * GET ALL (everyone can view)
-     * ======================= */
+    /* ================= GET ALL ================= */
     @GetMapping
-    public ResponseEntity<?> getAll() {
-
-        return ResponseEntity.ok(service.findAll());
+    public List<VillageDTO> getAllVillages() {
+        return service.findAll();
     }
 
+    /* ================= GET BY ID ================= */
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
-
-        VillageDTO dto = service.findById(id);
-        if (dto == null) return ResponseEntity.notFound().build();
-
-        return ResponseEntity.ok(dto);
+    public VillageDTO getVillageById(@PathVariable Long id) {
+        return service.findById(id);
     }
+
+    /* ================= SEARCH WITH PAGINATION ================= */
     @GetMapping("/search")
-    public ResponseEntity<?> searchVillages(
+    public Map<String, Object> searchVillages(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "5") int size,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String state
     ) {
-        return ResponseEntity.ok(service.search(page, size, name, city, state));
+        return service.search(page, size, name, city, state);
     }
 
-
+    /* ================= GET SMART GAON ================= */
+    @GetMapping("/smart")
+    public List<VillageDTO> getSmartVillages() {
+        return service.getSmartVillages();
+    }
 }

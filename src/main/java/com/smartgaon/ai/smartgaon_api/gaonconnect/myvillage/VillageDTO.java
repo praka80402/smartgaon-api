@@ -4,7 +4,7 @@ import lombok.Data;
 
 import java.util.List;
 
-import com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.villagedevelopment.VillageDevelopmentDTO;
+
 
 @Data
 public class VillageDTO {
@@ -14,5 +14,5 @@ public class VillageDTO {
     private String state;
     private String description;
     private List<String> images;
-    private List<VillageDevelopmentDTO> developments;
+    private Boolean smartGaon;
 }

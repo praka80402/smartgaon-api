@@ -16,27 +16,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Village {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	  @Id
+	    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	    private Long id;
 
-    private String name;
-    private String city;
-    private String state;
+	    private String name;
+	    private String city;
+	    private String state;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+	    @Column(columnDefinition = "TEXT")
+	    private String description;
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String imageFiles;
-    
-    
-    @OneToMany(
-    	    mappedBy = "village",
-    	    cascade = CascadeType.ALL,
-    	    orphanRemoval = true,
-    	    fetch = FetchType.EAGER
-    	)
-    	private List<VillageDevelopment> developments;
+	    @Column(columnDefinition = "LONGTEXT")
+	    private String imageFiles;
+	     
+	    private Boolean smartGaon = false;
+	  
 
 }

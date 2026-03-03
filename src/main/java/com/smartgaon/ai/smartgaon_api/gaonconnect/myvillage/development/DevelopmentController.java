@@ -1,44 +1,69 @@
 package com.smartgaon.ai.smartgaon_api.gaonconnect.myvillage.development;
 
-
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
-import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
-@RequestMapping("/admin/developments")
+@RequestMapping("/admin/development")
 @RequiredArgsConstructor
-@CrossOrigin("*")
 public class DevelopmentController {
 
+    private final DevelopmentService service;
     private final DevelopmentRepository repo;
-    private final S3Service s3Service;
 
-    /* ---------------- CREATE WITH IMAGE ---------------- */
+    /* ================= CREATE ================= */
 
+    /* ================= GET BY PHASE ================= */
+    @GetMapping("/phase/{phaseNumber}")
+    public List<Development> getByPhaseNumber(@PathVariable Integer phaseNumber) {
+        return repo.findByPhaseNumberOrderByIdDesc(phaseNumber);
+    }
 
-    /* ---------------- UPDATE WITH IMAGE ---------------- */
- 
+    /* ================= UPDATE ================= */
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public Development update(
+            @PathVariable Long id,
+            @RequestParam Integer phaseNumber,
+            @RequestParam String title,
+            @RequestParam String description,
+            @RequestParam PhaseStatus status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+    ) {
 
-    /* ---------------- GET ALL ---------------- */
+        Development dev = new Development();
+        dev.setPhaseNumber(phaseNumber);
+        dev.setTitle(title);
+        dev.setDescription(description);
+        dev.setStatus(status);
+
+        if (startDate != null && !startDate.isEmpty())
+            dev.setStartDate(LocalDate.parse(startDate));
+
+        if (endDate != null && !endDate.isEmpty())
+            dev.setEndDate(LocalDate.parse(endDate));
+
+        return service.update(id, dev);
+    }
+
+    /* ================= GET ALL ================= */
     @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity.ok(repo.findAll());
+    public List<Development> getAll() {
+        return service.getAll();
     }
 
-    /* ---------------- GET BY ID ---------------- */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
-        return repo.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    /* ================= FILTER BY STATUS ================= */
+    @GetMapping("/status/{status}")
+    public List<Development> getByStatus(@PathVariable PhaseStatus status) {
+        return service.getByStatus(status);
     }
 
-    /* ---------------- DELETE ---------------- */
- 
+    /* ================= DELETE ================= */
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
+    }
 }
