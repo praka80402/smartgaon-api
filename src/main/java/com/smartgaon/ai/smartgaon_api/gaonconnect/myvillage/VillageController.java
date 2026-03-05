@@ -20,14 +20,14 @@ public class VillageController {
         return service.findAll();
     }
     
-    @GetMapping("/my-village")
-    public List<VillageDTO> getMyVillage(
-            @RequestParam String state,
-            @RequestParam String district,
-            @RequestParam String area
-    ) {
-        return service.getMyVillage(state, district, area);
-    }
+//    @GetMapping("/my-village")
+//    public List<VillageDTO> getMyVillage(
+//            @RequestParam String state,
+//            @RequestParam String district,
+//            @RequestParam String area
+//    ) {
+//        return service.getMyVillage(state, district, area);
+//    }
 
     /* ================= GET BY ID ================= */
     @GetMapping("/{id}")

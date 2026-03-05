@@ -17,11 +17,11 @@ public interface VillageRepository extends JpaRepository<Village, Long> {
     Page<Village> searchVillages(String name, String city, String state, Pageable pageable);
     
     List<Village> findBySmartGaonTrue();
-    List<Village> findByStateAndDistrictAndArea(
-            String state,
-            String district,
-            String area
-    );
+//    List<Village> findByStateAndDistrictAndArea(
+//            String state,
+//            String district,
+//            String area
+//    );
 
 }
 
