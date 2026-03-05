@@ -104,4 +104,14 @@ public class VillageService {
                 .map(VillageMapper::toDTO)
                 .toList();
     }
+    
+    public List<VillageDTO> getMyVillage(String state, String district, String area) {
+
+        List<Village> villages =
+                repo.findByStateAndDistrictAndArea(state, district, area);
+
+        return villages.stream()
+                .map(VillageMapper::toDTO)
+                .toList();
+    }
 }

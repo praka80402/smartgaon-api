@@ -22,7 +22,7 @@ public class DevelopmentService {
                 .orElseThrow(() -> new RuntimeException("Phase not found"));
 
         existing.setPhaseNumber(dev.getPhaseNumber());
-        existing.setTitle(dev.getTitle());
+//        existing.setTitle(dev.getTitle());
         existing.setDescription(dev.getDescription());
         existing.setStatus(dev.getStatus());
         existing.setStartDate(dev.getStartDate());
