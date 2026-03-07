@@ -61,9 +61,9 @@ public class Development {
 
 	    private LocalDate endDate;
 	    
-	    @OneToMany(mappedBy = "development",
-	            cascade = CascadeType.ALL,
-	            orphanRemoval = true,
-	            fetch = FetchType.EAGER)
-	    private List<DevelopmentImage> images;
+//	    @OneToMany(mappedBy = "development",
+//	            cascade = CascadeType.ALL,
+//	            orphanRemoval = true,
+//	            fetch = FetchType.EAGER)
+//	    private List<DevelopmentImage> images;
 }

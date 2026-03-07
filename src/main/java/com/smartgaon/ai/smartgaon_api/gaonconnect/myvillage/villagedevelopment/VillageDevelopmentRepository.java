@@ -4,9 +4,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 
 import java.util.List;
+import java.util.Optional;
 
 public interface VillageDevelopmentRepository
         extends JpaRepository<VillageDevelopment, Long> {
 
     List<VillageDevelopment> findByVillageId(Long villageId);
+    
+    Optional<VillageDevelopment> findByVillageIdAndDevelopmentId(Long villageId, Long developmentId);
 }

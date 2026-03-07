@@ -19,118 +19,171 @@ import lombok.RequiredArgsConstructor;
 
 public class VillageDevelopmentService {
 
+
     private final VillageDevelopmentRepository repo;
     private final VillageRepository villageRepo;
     private final DevelopmentRepository developmentRepo;
     private final S3Service s3Service;
+
+    /* ================= ASSIGN DEVELOPMENT ================= */
 
     public VillageDevelopment assignPhase(
             Long villageId,
             Long developmentId,
             Integer progress,
             String remarks,
-            MultipartFile[] images
+            String videoUrl,
+            MultipartFile[] images,
+            MultipartFile[] reports
     ) {
 
-        if (progress < 0 || progress > 100)
-            throw new RuntimeException("Progress must be between 0 and 100");
+        Village village = villageRepo.findById(villageId)
+                .orElseThrow(() -> new RuntimeException("Village not found"));
 
-        Village village = villageRepo.findById(villageId).orElseThrow();
-        Development development = developmentRepo.findById(developmentId).orElseThrow();
+        Development development = developmentRepo.findById(developmentId)
+                .orElseThrow(() -> new RuntimeException("Development not found"));
 
         VillageDevelopment vd = new VillageDevelopment();
         vd.setVillage(village);
         vd.setDevelopment(development);
         vd.setProgressPercent(progress);
         vd.setRemarks(remarks);
+        vd.setVideoUrl(videoUrl);
 
-        List<String> uploadedUrls = new ArrayList<>();
+        List<String> gallery = new ArrayList<>();
+        List<String> reportUrls = new ArrayList<>();
 
-        if (images != null) {
-            if (images.length > 20)
-                throw new RuntimeException("Maximum 20 images allowed");
+        /* Upload Images */
+
+        if (images != null && images.length > 0) {
 
             for (MultipartFile img : images) {
-                if (!img.isEmpty()) {
-                    uploadedUrls.add(s3Service.uploadFile(img));
+
+                if (img != null && !img.isEmpty()) {
+
+                    String url = s3Service.uploadFile(img);
+                    gallery.add(url);
+
                 }
             }
         }
 
-        vd.setGalleryImages(uploadedUrls);
+        /* Upload Reports */
+
+        if (reports != null && reports.length > 0) {
+
+            for (MultipartFile pdf : reports) {
+
+                if (pdf != null && !pdf.isEmpty()) {
+
+                    String url = s3Service.uploadFile(pdf);
+                    reportUrls.add(url);
+
+                }
+            }
+        }
+
+        vd.setGalleryImages(gallery);
+        vd.setReports(reportUrls);
 
         return repo.save(vd);
     }
-    /* UPDATE PROGRESS */
-    public VillageDevelopment updateProgress(
-            Long id,
-            Integer progress,
-            String remarks
-    ) {
 
-        if (progress < 0 || progress > 100)
-            throw new RuntimeException("Progress must be between 0 and 100");
+    /* ================= UPDATE BY VILLAGE ================= */
 
-        VillageDevelopment vd = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Record not found"));
-
-        vd.setProgressPercent(progress);
-        vd.setRemarks(remarks);
-
-        return repo.save(vd);
-    }
-
-    /* GET ALL PHASES OF A VILLAGE */
-    public List<VillageDevelopment> getByVillage(Long villageId) {
-        return repo.findByVillageId(villageId);
-    }
-
-    /* DELETE */
-    public void delete(Long id) {
-        repo.deleteById(id);
-    }
-    
-    public VillageDevelopment updateWithGallery(
-            Long id,
+    public VillageDevelopment updateByVillage(
+            Long villageId,
+            Long developmentId,
             Integer progress,
             String remarks,
+            String videoUrl,
             List<String> existingImages,
-            MultipartFile[] newImages
+            List<String> existingReports,
+            MultipartFile[] images,
+            MultipartFile[] reports
     ) {
 
-        VillageDevelopment vd = repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
-
-        if (progress < 0 || progress > 100)
-            throw new RuntimeException("Progress must be between 0 and 100");
+        VillageDevelopment vd = repo
+                .findByVillageIdAndDevelopmentId(villageId, developmentId)
+                .orElseThrow(() -> new RuntimeException("Village development not found"));
 
         vd.setProgressPercent(progress);
         vd.setRemarks(remarks);
+        vd.setVideoUrl(videoUrl);
 
         List<String> finalImages = new ArrayList<>();
+        List<String> finalReports = new ArrayList<>();
 
-        // Keep selected old images
-        if (existingImages != null) {
+        /* Keep Existing Images */
+
+        if (existingImages != null && !existingImages.isEmpty()) {
             finalImages.addAll(existingImages);
         }
 
-        // Upload new images
-        if (newImages != null) {
+        /* Upload New Images */
 
-            if (finalImages.size() + newImages.length > 20)
-                throw new RuntimeException("Maximum 20 images allowed");
+        if (images != null && images.length > 0) {
 
-            for (MultipartFile img : newImages) {
-                if (!img.isEmpty()) {
-                    finalImages.add(s3Service.uploadFile(img));
+            for (MultipartFile img : images) {
+
+                if (img != null && !img.isEmpty()) {
+
+                    String url = s3Service.uploadFile(img);
+                    finalImages.add(url);
+
+                }
+            }
+        }
+
+        /* Keep Existing Reports */
+
+        if (existingReports != null && !existingReports.isEmpty()) {
+            finalReports.addAll(existingReports);
+        }
+
+        /* Upload New Reports */
+
+        if (reports != null && reports.length > 0) {
+
+            for (MultipartFile pdf : reports) {
+
+                if (pdf != null && !pdf.isEmpty()) {
+
+                    String url = s3Service.uploadFile(pdf);
+                    finalReports.add(url);
+
                 }
             }
         }
 
         vd.setGalleryImages(finalImages);
+        vd.setReports(finalReports);
 
         return repo.save(vd);
     }
 
+    /* ================= GET BY VILLAGE ================= */
 
+    public List<VillageDevelopment> getByVillage(Long villageId) {
+
+        return repo.findByVillageId(villageId);
+
+    }
+
+    /* ================= DELETE ================= */
+
+    public void delete(Long id) {
+
+        repo.deleteById(id);
+
+    }
+
+    /* ================= GET BY ID ================= */
+
+    public VillageDevelopment getById(Long id) {
+
+        return repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Village development not found"));
+
+    }
 }

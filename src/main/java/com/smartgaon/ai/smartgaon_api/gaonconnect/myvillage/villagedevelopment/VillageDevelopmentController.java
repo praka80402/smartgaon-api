@@ -21,51 +21,103 @@ public class VillageDevelopmentController {
 
     private final VillageDevelopmentService service;
 
-    /* ASSIGN PHASE */
-    @PostMapping(consumes = "multipart/form-data")
+    /* ================= ASSIGN DEVELOPMENT ================= */
+
+    @PostMapping(value = "/village/{villageId}", consumes = "multipart/form-data")
     public VillageDevelopment assignPhase(
-            @RequestParam Long villageId,
+            @PathVariable Long villageId,
             @RequestParam Long developmentId,
             @RequestParam Integer progress,
             @RequestParam(required = false) String remarks,
-            @RequestParam(required = false) MultipartFile[] images
+            @RequestParam(required = false) String videoUrl,
+            @RequestParam(required = false) MultipartFile[] images,
+            @RequestParam(required = false) MultipartFile[] reports
     ) {
+
         return service.assignPhase(
                 villageId,
                 developmentId,
                 progress,
                 remarks,
-                images
+                videoUrl,
+                images,
+                reports
         );
     }
 
-    /* UPDATE WITH GALLERY */
-    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
-    public VillageDevelopment updateWithGallery(
-            @PathVariable Long id,
-            @RequestParam Integer progress,
-            @RequestParam(required = false) String remarks,
-            @RequestParam(required = false) List<String> existingImages,
-            @RequestParam(required = false) MultipartFile[] images
+    /* ================= UPDATE BY VILLAGE ================= */
+
+    @PutMapping(value = "/village/{villageId}/{developmentId}", consumes = "multipart/form-data")
+    public VillageDevelopment updateByVillage(
+            @PathVariable Long villageId,
+            @PathVariable Long developmentId,
+            @RequestParam("progress") Integer progress,
+            @RequestParam(value = "remarks", required = false) String remarks,
+            @RequestParam(value = "videoUrl", required = false) String videoUrl,
+            @RequestParam(value = "existingImages", required = false) List<String> existingImages,
+            @RequestParam(value = "existingReports", required = false) List<String> existingReports,
+            @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "reports", required = false) MultipartFile[] reports
     ) {
-        return service.updateWithGallery(
-                id,
+
+        return service.updateByVillage(
+                villageId,
+                developmentId,
                 progress,
                 remarks,
+                videoUrl,
                 existingImages,
-                images
+                existingReports,
+                images,
+                reports
         );
     }
 
-    /* GET BY VILLAGE */
+    /* ================= GET BY VILLAGE ================= */
+
     @GetMapping("/village/{villageId}")
     public List<VillageDevelopment> getByVillage(@PathVariable Long villageId) {
+
         return service.getByVillage(villageId);
+
     }
 
-    /* DELETE */
+    /* ================= DELETE ================= */
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
+
         service.delete(id);
+
+    }
+
+    /* ================= GET IMAGES ================= */
+
+    @GetMapping("/{id}/images")
+    public List<String> getImages(@PathVariable Long id) {
+
+        VillageDevelopment vd = service.getById(id);
+        return vd.getGalleryImages();
+
+    }
+
+    /* ================= GET VIDEO ================= */
+
+    @GetMapping("/{id}/video")
+    public String getVideo(@PathVariable Long id) {
+
+        VillageDevelopment vd = service.getById(id);
+        return vd.getVideoUrl();
+
+    }
+
+    /* ================= GET REPORTS ================= */
+
+    @GetMapping("/{id}/reports")
+    public List<String> getReports(@PathVariable Long id) {
+
+        VillageDevelopment vd = service.getById(id);
+        return vd.getReports();
+
     }
 }

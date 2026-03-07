@@ -37,4 +37,16 @@ public class VillageDevelopment {
     )
     @Column(name = "image_url")
     private List<String> galleryImages;
+    
+    @Column(name = "video_url", columnDefinition = "TEXT")
+    private String videoUrl;
+    
+    @ElementCollection
+    @CollectionTable(
+            name = "village_development_reports",
+            joinColumns = @JoinColumn(name = "village_development_id")
+    )
+    @Column(name = "report_url")
+    private List<String> reports;
+    
 }
