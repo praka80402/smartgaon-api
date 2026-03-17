@@ -213,6 +213,7 @@ public ResponseEntity<?> updateGaonSathiAvatar(
         response.put("pincode", user.getPincode());
         response.put("profileImageUrl", user.getProfileImageUrl());
         response.put("profileCompleted", user.isProfileCompleted());
+        response.put("gaonsathi_image_url", user.getGaonSathiImageUrl());
 
         return response;
     }
