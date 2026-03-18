@@ -5,6 +5,7 @@ import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -121,6 +122,43 @@ public class ProfileController {
         }
     }
 
+    @PostMapping("/update-gaon-sathi-avatar/{phone}")
+public ResponseEntity<?> updateGaonSathiAvatar(
+        @PathVariable String phone,
+        @RequestParam String gaonSathiimageUrl) {
+
+    try {
+
+        Optional<User> userOpt = userRepository.findByPhone(phone);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User not found");
+        }
+
+        User user = userOpt.get();
+
+        // Save selected avatar
+        user.setGaonSathiImageUrl(gaonSathiimageUrl);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "Gaon Sathi avatar updated successfully",
+                        "gaonSathiUrl", gaonSathiimageUrl
+                )
+        );
+
+    } catch (Exception e) {
+
+        e.printStackTrace();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to update avatar: " + e.getMessage());
+    }
+}
+
     // ============================================
     // GET PROFILE IMAGE
     // ============================================
@@ -175,6 +213,7 @@ public class ProfileController {
         response.put("pincode", user.getPincode());
         response.put("profileImageUrl", user.getProfileImageUrl());
         response.put("profileCompleted", user.isProfileCompleted());
+        response.put("gaonsathi_image_url", user.getGaonSathiImageUrl());
 
         return response;
     }

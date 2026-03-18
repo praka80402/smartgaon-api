@@ -85,4 +85,7 @@ public class User {
     @Column(name = "auth_provider")
     private String authProvider; // GOOGLE, EMAIL, PHONE
 
+    @Column(name = "gaonsathi_image_url")
+    private String gaonSathiImageUrl;
+
 }
