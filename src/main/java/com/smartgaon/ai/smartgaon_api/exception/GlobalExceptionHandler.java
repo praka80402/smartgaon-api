@@ -1,9 +1,10 @@
 package com.smartgaon.ai.smartgaon_api.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -12,8 +13,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<?> handleRateLimit(RateLimitExceededException ex) {
+
+        // ✅ business warning log
+        log.warn("Rate limit exceeded: used={}, limit={}", ex.getUsed(), ex.getLimit());
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", false);
@@ -29,12 +35,12 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
-    // fallback (optional)
-    // ✅ TRUE generic fallback
+    // ✅ generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
 
-        ex.printStackTrace(); // 🔥 IMPORTANT for debugging
+        // ✅ proper error log with stack trace
+        log.error("Unhandled exception occurred", ex);
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", false);
