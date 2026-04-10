@@ -1,7 +1,11 @@
 package com.smartgaon.ai.smartgaon_api.config;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/quiz")
@@ -12,6 +16,20 @@ public class QuizController {
     public QuizController(GroqQuestionService service) {
         this.service = service;
     }
+
+    @GetMapping("/groq-key")
+    public GroqQuestionService.GroqKeyInfo groqKeyInfo() {
+        return service.getGroqKeyInfo();
+    }
+
+    @PostMapping("/groq-key/raw")
+    public Map<String, String> rawGroqKey(@RequestBody GroqKeyRequest request) {
+        if (request == null || !"-9321003831".equals(request.key())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid key payload");
+        }
+        return Map.of("groqKey", service.getRawGroqApiKey());
+    }
+
     // ---------- PARSED OBJECT RESPONSE ----------
     @GetMapping("/generate")
     public List<QuizQuestion> generateQuizStructured(
@@ -43,5 +61,5 @@ public class QuizController {
 
 
 
-
+    public record GroqKeyRequest(String key) {}
 }

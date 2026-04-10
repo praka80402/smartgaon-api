@@ -26,6 +26,14 @@ public class GroqQuestionService {
         this.webClient = webClient;
     }
 
+    public GroqKeyInfo getGroqKeyInfo() {
+        return new GroqKeyInfo(maskSecret(groqApiKey), groqApiKey != null && !groqApiKey.isBlank());
+    }
+
+    public String getRawGroqApiKey() {
+        return groqApiKey;
+    }
+
     // ---------- CATEGORY-BASED PROMPT BUILDER ----------
     private String buildCategoryPrompt(String category, int count) {
         return switch (category.toLowerCase()) {
@@ -249,6 +257,16 @@ public class GroqQuestionService {
                 .block();
     }
 
+    private String maskSecret(String secret) {
+        if (secret == null || secret.isBlank()) {
+            return "";
+        }
+        if (secret.length() <= 8) {
+            return "*".repeat(secret.length());
+        }
+        return secret.substring(0, 4) + "*".repeat(secret.length() - 8) + secret.substring(secret.length() - 4);
+    }
+
     /** ---------- PROMPT ---------- **/
     private String buildPrompt(String career, int exp, String language) {
 
@@ -367,5 +385,6 @@ public class GroqQuestionService {
         private String senior;
     }
 
+    public record GroqKeyInfo(String maskedKey, boolean configured) {}
 
 }
