@@ -25,13 +25,38 @@ public class ProfileController {
     @Autowired
     private S3Service s3Service;
 
+
+
+    @GetMapping("/{phone}")
+public ResponseEntity<?> getProfileByPhone(@PathVariable String phone) {
+
+    Optional<User> userOpt = userRepository.findByPhone(phone);
+
+    if (userOpt.isEmpty()) {
+        return ResponseEntity.status(404).body("User not found");
+    }
+
+    return ResponseEntity.ok(buildProfileResponse(userOpt.get()));
+}
+
     // ============================================
     // GET PROFILE
     // ============================================
-    @GetMapping("/{phone}")
-    public ResponseEntity<?> getProfile(@PathVariable String phone) {
+    @GetMapping
+    public ResponseEntity<?> getProfile(
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String email) {
 
-        Optional<User> userOpt = userRepository.findByPhone(phone);
+        Optional<User> userOpt = Optional.empty();
+
+        if (phone != null) {
+            userOpt = userRepository.findByPhone(phone);
+        }
+
+        if (userOpt.isEmpty() && email != null) {
+            userOpt = userRepository.findByEmail(email);
+        }
+
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(404).body("User not found");
         }
@@ -53,53 +78,104 @@ public class ProfileController {
     // ============================================
     // UPDATE PROFILE
     // ============================================
-    @PutMapping("/update")
-    public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
+@PutMapping("/update")
+public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
 
-        Optional<User> userOpt = userRepository.findByPhone(updatedUser.getPhone());
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(404).body("User not found");
-        }
-
-        User user = userOpt.get();
-
-        user.setFirstName(updatedUser.getFirstName());
-        user.setLastName(updatedUser.getLastName());
-        user.setRoles(updatedUser.getRoles());
-        user.setState(updatedUser.getState());
-        user.setDistrict(updatedUser.getDistrict());
-        user.setArea(updatedUser.getArea());
-        user.setPincode(updatedUser.getPincode());
-
-        updateProfileCompletion(user);
-
-        userRepository.save(user);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "message", "Profile updated successfully",
-                        "profileCompleted", user.isProfileCompleted()
-                )
-        );
+    // ✅ Validation: at least one identifier required
+    if (updatedUser.getPhone() == null && updatedUser.getEmail() == null) {
+        return ResponseEntity.badRequest()
+                .body("Phone or Email is required");
     }
 
+    Optional<User> userOpt = Optional.empty();
+
+    // 🔍 Try finding by phone first
+    if (updatedUser.getPhone() != null) {
+        userOpt = userRepository.findByPhone(updatedUser.getPhone());
+    }
+
+    // 🔍 If not found, try by email
+    if (userOpt.isEmpty() && updatedUser.getEmail() != null) {
+        userOpt = userRepository.findByEmail(updatedUser.getEmail());
+    }
+
+    User user;
+
+    // 🔥 AUTO-CREATE (for first-time Gmail login)
+    if (userOpt.isEmpty()) {
+        user = new User();
+        user.setPhone(updatedUser.getPhone());
+        user.setEmail(updatedUser.getEmail());
+    } else {
+        user = userOpt.get();
+    }
+
+    // 🔗 Link phone & email if missing
+    if (user.getPhone() == null && updatedUser.getPhone() != null) {
+        user.setPhone(updatedUser.getPhone());
+    }
+
+    if (user.getEmail() == null && updatedUser.getEmail() != null) {
+        user.setEmail(updatedUser.getEmail());
+    }
+
+    // ✏️ Update profile fields
+    user.setFirstName(updatedUser.getFirstName());
+    user.setLastName(updatedUser.getLastName());
+    user.setRoles(updatedUser.getRoles());
+    user.setState(updatedUser.getState());
+    user.setDistrict(updatedUser.getDistrict());
+    user.setArea(updatedUser.getArea());
+    user.setPincode(updatedUser.getPincode());
+
+    // ✅ Profile completion logic
+    updateProfileCompletion(user);
+
+    // 💾 Save
+    userRepository.save(user);
+
+    return ResponseEntity.ok(
+            Map.of(
+                    "message", "Profile updated successfully",
+                    "profileCompleted", user.isProfileCompleted()
+            )
+    );
+}
     // ============================================
     // UPLOAD PROFILE IMAGE (NOW S3)
     // ============================================
-    @PostMapping("/upload-image/{phone}")
+    @PostMapping("/upload-image")
     public ResponseEntity<?> uploadImage(
-            @PathVariable String phone,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String email,
             @RequestParam("file") MultipartFile file) {
 
         try {
-            Optional<User> userOpt = userRepository.findByPhone(phone);
+            Optional<User> userOpt = Optional.empty();
+
+            if (phone != null) {
+                userOpt = userRepository.findByPhone(phone);
+            }
+
+            if (userOpt.isEmpty() && email != null) {
+                userOpt = userRepository.findByEmail(email);
+            }
+
             if (userOpt.isEmpty()) {
                 return ResponseEntity.status(404).body("User not found");
             }
 
             User user = userOpt.get();
 
-            // 🔥 Upload to AWS S3
+            // 🔗 Link missing fields
+            if (user.getPhone() == null && phone != null) {
+                user.setPhone(phone);
+            }
+            if (user.getEmail() == null && email != null) {
+                user.setEmail(email);
+            }
+
+            // 🔥 Upload to S3
             String imageUrl = s3Service.uploadFile(file);
 
             user.setProfileImageUrl(imageUrl);
@@ -111,9 +187,7 @@ public class ProfileController {
                     Map.of(
                             "message", "Profile image uploaded successfully!",
                             "url", imageUrl,
-                            "profileCompleted", user.isProfileCompleted()
-                    )
-            );
+                            "profileCompleted", user.isProfileCompleted()));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -122,72 +196,90 @@ public class ProfileController {
         }
     }
 
-    @PostMapping("/update-gaon-sathi-avatar/{phone}")
-public ResponseEntity<?> updateGaonSathiAvatar(
-        @PathVariable String phone,
-        @RequestParam String gaonSathiimageUrl) {
+    @PostMapping("/update-gaon-sathi-avatar")
+    public ResponseEntity<?> updateGaonSathiAvatar(
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String email,
+            @RequestParam String gaonSathiimageUrl) {
 
-    try {
+        try {
+            Optional<User> userOpt = Optional.empty();
 
-        Optional<User> userOpt = userRepository.findByPhone(phone);
+            if (phone != null) {
+                userOpt = userRepository.findByPhone(phone);
+            }
 
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("User not found");
+            if (userOpt.isEmpty() && email != null) {
+                userOpt = userRepository.findByEmail(email);
+            }
+
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("User not found");
+            }
+
+            User user = userOpt.get();
+
+            // 🔗 Link fields
+            if (user.getPhone() == null && phone != null) {
+                user.setPhone(phone);
+            }
+            if (user.getEmail() == null && email != null) {
+                user.setEmail(email);
+            }
+
+            user.setGaonSathiImageUrl(gaonSathiimageUrl);
+            userRepository.save(user);
+
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message", "Gaon Sathi avatar updated successfully",
+                            "gaonSathiUrl", gaonSathiimageUrl));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update avatar: " + e.getMessage());
         }
-
-        User user = userOpt.get();
-
-        // Save selected avatar
-        user.setGaonSathiImageUrl(gaonSathiimageUrl);
-
-        userRepository.save(user);
-
-        return ResponseEntity.ok(
-                Map.of(
-                        "message", "Gaon Sathi avatar updated successfully",
-                        "gaonSathiUrl", gaonSathiimageUrl
-                )
-        );
-
-    } catch (Exception e) {
-
-        e.printStackTrace();
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Failed to update avatar: " + e.getMessage());
     }
-}
 
     // ============================================
     // GET PROFILE IMAGE
     // ============================================
-    @GetMapping("/image/{phone}")
-    public ResponseEntity<?> getProfileImage(@PathVariable String phone) {
+    @GetMapping("/image")
+    public ResponseEntity<?> getProfileImage(
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String email) {
 
-        Optional<User> userOpt = userRepository.findByPhone(phone);
+        Optional<User> userOpt = Optional.empty();
+
+        if (phone != null) {
+            userOpt = userRepository.findByPhone(phone);
+        }
+
+        if (userOpt.isEmpty() && email != null) {
+            userOpt = userRepository.findByEmail(email);
+        }
 
         if (userOpt.isEmpty() || userOpt.get().getProfileImageUrl() == null) {
             return ResponseEntity.status(404).body("No profile image found");
         }
 
         return ResponseEntity.ok(
-                Map.of("url", userOpt.get().getProfileImageUrl())
-        );
+                Map.of("url", userOpt.get().getProfileImageUrl()));
     }
 
     // ============================================
     // UTILITIES
     // ============================================
     private void updateProfileCompletion(User user) {
-        boolean completed =
-                notEmpty(user.getFirstName()) &&
-                        notEmpty(user.getLastName()) &&
-                        notEmpty(user.getState()) &&
-                        notEmpty(user.getDistrict()) &&
-                        notEmpty(user.getArea()) &&
-                        notEmpty(user.getPincode()) &&
-                        notEmpty(user.getProfileImageUrl());
+        boolean completed = notEmpty(user.getFirstName()) &&
+                notEmpty(user.getLastName()) &&
+                notEmpty(user.getState()) &&
+                notEmpty(user.getDistrict()) &&
+                notEmpty(user.getArea()) &&
+                notEmpty(user.getPincode()) &&
+                notEmpty(user.getProfileImageUrl());
 
         user.setProfileCompleted(completed);
     }
