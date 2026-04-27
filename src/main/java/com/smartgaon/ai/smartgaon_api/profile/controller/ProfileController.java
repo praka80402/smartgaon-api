@@ -106,6 +106,9 @@ public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
         user = new User();
         user.setPhone(updatedUser.getPhone());
         user.setEmail(updatedUser.getEmail());
+        if (updatedUser.getProfileImageUrl() != null) {
+        user.setProfileImageUrl(updatedUser.getProfileImageUrl());
+    }
     } else {
         user = userOpt.get();
     }
