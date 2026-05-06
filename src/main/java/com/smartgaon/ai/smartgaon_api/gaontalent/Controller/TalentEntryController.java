@@ -30,11 +30,13 @@ public class TalentEntryController {
             @RequestParam(required = false) Long competitionId,
             @RequestParam boolean isCompetition,
             @RequestParam MultipartFile profileImage,
-            @RequestParam MultipartFile media
+            @RequestParam(required = false) MultipartFile mediaFile,
+            @RequestParam(required = false) String mediaUrl
     ) throws Exception {
 
         return ResponseEntity.ok(
-                service.participate(userId,name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
+                service.participate(userId, name, LocalDate.parse(dob), villageOrArea, phone, category, competitionId,
+                        isCompetition, profileImage, mediaFile, mediaUrl)
         );
     }
 
@@ -50,11 +52,13 @@ public class TalentEntryController {
             @RequestParam(required = false) Long competitionId,
             @RequestParam boolean isCompetition,
             @RequestParam MultipartFile profileImage,
-            @RequestParam MultipartFile media
+            @RequestParam(required = false) MultipartFile mediaFile,
+            @RequestParam(required = false) String mediaUrl
     ) throws Exception {
 
         return ResponseEntity.ok(
-                service.participatewithSNS(userId,name, LocalDate.parse(dob), villageOrArea,phone, category, competitionId,isCompetition, profileImage, media)
+                service.participatewithSNS(userId, name, LocalDate.parse(dob), villageOrArea, phone, category,
+                        competitionId, isCompetition, profileImage, mediaFile, mediaUrl)
         );
     }
 

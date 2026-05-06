@@ -1,6 +1,5 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Service;
 
-import com.smartgaon.ai.smartgaon_api.s3.VideoSnsPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +12,7 @@ import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.*;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -24,11 +24,7 @@ public class TalentEntryService {
     private final TalentCompetitionRepository compRepo;
     private final ReferenceNumberService referenceService;
     private final S3Service s3Service;
-    private final VideoSnsPublisher snsPublisher;
     private final UserRepository userRepository;
-
-    private final List<String> imageTypes = List.of("jpg", "jpeg", "png");
-    private final List<String> videoTypes = List.of("mp4", "mov", "avi");
 
     public String participate(
     		Long userId, //
@@ -40,7 +36,8 @@ public class TalentEntryService {
             Long competitionId,
             boolean isCompetition,
             MultipartFile profileImage,
-            MultipartFile media
+            MultipartFile mediaFile,
+            String mediaUrl
     ) throws Exception {
     	
     	// ⭐ Fetch ONLY pincode from user
@@ -56,16 +53,9 @@ public class TalentEntryService {
                     .orElseThrow(() -> new Exception("Invalid competition"));
         }
 
-        String ext = getExt(media);
-
-        if (category == TalentCategory.ART && !imageTypes.contains(ext))
-            throw new Exception("ART needs image file.");
-
-        if (category != TalentCategory.ART && !videoTypes.contains(ext))
-            throw new Exception("This category requires video file.");
-
         String profileUrl = s3Service.uploadFile(profileImage);
-        String mediaUrl = s3Service.uploadFile(media);
+        String resolvedMediaUrl = resolveMediaUrl(category, mediaFile, mediaUrl);
+        String mediaType = resolveMediaType(category, mediaFile, resolvedMediaUrl);
 
         TalentEntry entry = new TalentEntry();
         entry.setName(name);
@@ -79,8 +69,10 @@ public class TalentEntryService {
         entry.setCompetitionId(isCompetition ? competitionId : null);
 
         entry.setProfileImageUrl(profileUrl);
-        entry.setMediaUrl(mediaUrl);
-        entry.setMediaType(ext);
+        entry.setMediaUrl(resolvedMediaUrl);
+        entry.setMediaType(mediaType);
+        entry.setProcessingStatus("READY");
+        entry.setThumbnailUrl(category == TalentCategory.ART ? null : buildYouTubeThumbnail(resolvedMediaUrl));
 
         String ref = referenceService.generate();
         entry.setReferenceNumber(ref);
@@ -101,75 +93,163 @@ public class TalentEntryService {
             Long competitionId,
             boolean isCompetition,
             MultipartFile profileImage,
-            MultipartFile media
+            MultipartFile mediaFile,
+            String mediaUrl
     ) throws Exception {
-
-        // 1️⃣ Validate user
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new Exception("User not found"));
-
-        if (isCompetition) {
-            if (competitionId == null)
-                throw new Exception("Competition ID is required.");
-
-            compRepo.findById(competitionId)
-                    .orElseThrow(() -> new Exception("Invalid competition"));
-        }
-
-        String ext = getExt(media);
-
-        if (category == TalentCategory.ART && !imageTypes.contains(ext))
-            throw new Exception("ART needs image file.");
-
-        if (category != TalentCategory.ART && !videoTypes.contains(ext))
-            throw new Exception("This category requires video file.");
-
-        // 2️⃣ Upload profile image (small → immediate)
-        String profileUrl = s3Service.uploadFile(profileImage);
-
-        // 3️⃣ Upload RAW video (NOT optimized)
-        String rawVideoUrl = s3Service.uploadFile(media);
-        // e.g. s3://bucket/raw-videos/{uuid}.mp4
-
-        // 4️⃣ Save DB entry (media not ready yet)
-        TalentEntry entry = new TalentEntry();
-        entry.setName(name);
-        entry.setDob(dob);
-        entry.setVillageOrArea(villageOrArea);
-        entry.setPhone(phone);
-        entry.setUserPincode(user.getPincode());
-        entry.setCategory(category);
-        entry.setUserId(userId);
-        entry.setCompetition(isCompetition);
-        entry.setCompetitionId(isCompetition ? competitionId : null);
-
-        entry.setProfileImageUrl(profileUrl);
-        entry.setMediaUrl(rawVideoUrl);           // raw for now
-        entry.setMediaType(ext);
-        entry.setProcessingStatus("PROCESSING");  // ⭐ NEW
-
-        String ref = referenceService.generate();
-entry.setReferenceNumber(ref);
-
-// 🔥 THIS IS THE KEY FIX
-entry.setMediaConvertGuid(ref);   
-
-entryRepo.save(entry);
-
-
-snsPublisher.publishVideoProcessingEvent(
-    entry.getId(),       
-    rawVideoUrl,
-    category.name()
-);
-
-        return "Video uploaded. Processing started. Ref: " + ref;
+        return participate(
+                userId,
+                name,
+                dob,
+                villageOrArea,
+                phone,
+                category,
+                competitionId,
+                isCompetition,
+                profileImage,
+                mediaFile,
+                mediaUrl
+        );
     }
 
+    private String resolveMediaUrl(
+            TalentCategory category,
+            MultipartFile mediaFile,
+            String mediaUrl
+    ) throws Exception {
+
+        if (category == TalentCategory.ART) {
+            if (mediaFile != null && !mediaFile.isEmpty()) {
+                return s3Service.uploadFile(mediaFile);
+            }
+
+            if (mediaUrl != null && !mediaUrl.trim().isEmpty()) {
+                return mediaUrl.trim();
+            }
+
+            throw new Exception("ART entries require either an image file or an image URL.");
+        }
+
+        if (mediaUrl == null || mediaUrl.trim().isEmpty()) {
+            throw new Exception("This category requires a YouTube link.");
+        }
+
+        String trimmed = mediaUrl.trim();
+        if (!isYouTubeUrl(trimmed)) {
+            throw new Exception("Please provide a valid YouTube URL.");
+        }
+
+        return trimmed;
+    }
+
+    private String resolveMediaType(
+            TalentCategory category,
+            MultipartFile mediaFile,
+            String resolvedMediaUrl
+    ) {
+
+        if (category == TalentCategory.ART) {
+            if (mediaFile != null && !mediaFile.isEmpty()) {
+                return getExt(mediaFile);
+            }
+
+            return getExtFromUrl(resolvedMediaUrl);
+        }
+
+        return "YOUTUBE";
+    }
+
+    private boolean isYouTubeUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = Optional.ofNullable(uri.getHost())
+                    .orElse("")
+                    .toLowerCase(Locale.ROOT);
+
+            return host.equals("youtube.com")
+                    || host.endsWith(".youtube.com")
+                    || host.equals("youtu.be")
+                    || host.endsWith(".youtu.be");
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    private String buildYouTubeThumbnail(String url) {
+        String videoId = extractYouTubeVideoId(url);
+        if (videoId == null) {
+            return null;
+        }
+
+        return "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+    }
+
+    private String extractYouTubeVideoId(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = Optional.ofNullable(uri.getHost())
+                    .orElse("")
+                    .toLowerCase(Locale.ROOT);
+
+            if (host.endsWith("youtu.be")) {
+                String path = uri.getPath();
+                if (path == null || path.length() <= 1) {
+                    return null;
+                }
+                return path.substring(1);
+            }
+
+            String query = uri.getQuery();
+            if (query != null) {
+                for (String part : query.split("&")) {
+                    String[] pair = part.split("=", 2);
+                    if (pair.length == 2 && "v".equals(pair[0])) {
+                        return pair[1];
+                    }
+                }
+            }
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+
+        return null;
+    }
 
     private String getExt(MultipartFile file) {
         String name = file.getOriginalFilename();
         return name.substring(name.lastIndexOf('.') + 1).toLowerCase();
+    }
+
+    private String getExtFromUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return "LINK";
+        }
+
+        String cleanUrl = url.split("\\?")[0];
+        int lastSlash = cleanUrl.lastIndexOf('/');
+        if (lastSlash == -1 || lastSlash == cleanUrl.length() - 1) {
+            return "LINK";
+        }
+
+        String name = cleanUrl.substring(lastSlash + 1);
+        int dot = name.lastIndexOf('.');
+        if (dot == -1 || dot == name.length() - 1) {
+            return "LINK";
+        }
+
+        return name.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    private boolean isS3Url(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = Optional.ofNullable(uri.getHost())
+                    .orElse("")
+                    .toLowerCase(Locale.ROOT);
+
+            return host.endsWith(".amazonaws.com") || host.equals("amazonaws.com");
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
     public Page<TalentEntry> getFeed(TalentCategory category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
@@ -284,7 +364,7 @@ snsPublisher.publishVideoProcessingEvent(
         if (entry.getProfileImageUrl() != null)
             s3Service.deleteFile(entry.getProfileImageUrl());
 
-        if (entry.getMediaUrl() != null)
+        if (entry.getMediaUrl() != null && isS3Url(entry.getMediaUrl()))
             s3Service.deleteFile(entry.getMediaUrl());
 
         // Delete DB record
