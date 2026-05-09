@@ -348,6 +348,18 @@ public class TalentEntryService {
         // Logged in
         return entryRepo.findAllForUser(userId, pageable);
     }
+
+    public Page<TalentEntry> getMyReels(
+            Long userId,
+            int page,
+            int size
+    ) {
+
+        Pageable pageable =
+            PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        return entryRepo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    }
     
  // ---------------- DELETE ENTRY ----------------
     public void deleteEntry(Long entryId, Long userId) throws Exception {
