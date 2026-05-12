@@ -110,6 +110,18 @@ public class TalentEntryController {
         );
     }
 
+    @GetMapping("/feed/my/{userId}")
+    public ResponseEntity<?> getMyReels(
+            @PathVariable Long userId,
+            @RequestParam int page,
+            @RequestParam int size
+    ) {
+
+        return ResponseEntity.ok(
+            service.getMyReels(userId, page, size)
+        );
+    }
+
  // ---------------- DELETE API ----------------
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> deleteEntry(

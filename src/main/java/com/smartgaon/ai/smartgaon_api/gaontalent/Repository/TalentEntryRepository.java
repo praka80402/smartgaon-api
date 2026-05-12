@@ -237,6 +237,18 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
     );
 
 
+    // Reels created by a specific user
+    @Query("""
+        SELECT e FROM TalentEntry e
+        WHERE e.userId = :userId
+        ORDER BY e.createdAt DESC
+    """)
+    Page<TalentEntry> findByUserIdOrderByCreatedAtDesc(
+        @Param("userId") Long userId,
+        Pageable pageable
+    );
+
+
     // Visible categories
     @Query("""
         SELECT DISTINCT e.category
@@ -264,4 +276,3 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
     );
 
 }
-
