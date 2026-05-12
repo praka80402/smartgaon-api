@@ -1,11 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.gaontalent.Controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.smartgaon.ai.smartgaon_api.gaontalent.Service.WinnerService;
 
@@ -26,7 +22,15 @@ public class WinnerController {
 
     @GetMapping
     public ResponseEntity<?> allWinners() {
-        return ResponseEntity.ok(service.getWinners());
+        return ResponseEntity.ok(service.getAllWinners());
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<?> winnersByFilter(
+            @RequestParam(required = false) Long competitionId,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month
+    ) {
+        return ResponseEntity.ok(service.getWinnersByFilter(competitionId, year, month));
     }
 }
-

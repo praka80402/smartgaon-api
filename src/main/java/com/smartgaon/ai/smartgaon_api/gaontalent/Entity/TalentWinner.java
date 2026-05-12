@@ -14,6 +14,7 @@ public class TalentWinner {
 
     private Long entryId;
 
+    private Long competitionId;
+
     private LocalDateTime declaredAt = LocalDateTime.now();
 }
-

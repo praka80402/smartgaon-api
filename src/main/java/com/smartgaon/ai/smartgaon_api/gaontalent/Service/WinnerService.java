@@ -3,6 +3,9 @@ package com.smartgaon.ai.smartgaon_api.gaontalent.Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Year;
+import java.util.List;
+
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentEntry;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentWinner;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.TalentEntryRepository;
@@ -25,15 +28,29 @@ public class WinnerService {
 
         TalentWinner winner = new TalentWinner();
         winner.setEntryId(entryId);
+        winner.setCompetitionId(entry.getCompetitionId());
         winnerRepo.save(winner);
 
         return "Winner declared!";
     }
 
-    public Object getWinners() {
+    public List<TalentEntry> getAllWinners() {
         return entryRepo.findAll()
                 .stream()
-                .filter(TalentEntry::isWinner);
+                .filter(TalentEntry::isWinner)
+                .toList();
+    }
+
+    public List<TalentWinner> getWinnersByFilter(Long competitionId, Integer year, Integer month) {
+        if (competitionId == null && year == null && month == null) {
+            throw new RuntimeException("At least one filter parameter is required.");
+        }
+
+        Integer resolvedYear = year;
+        if (resolvedYear == null && (competitionId != null || month != null)) {
+            resolvedYear = Year.now().getValue();
+        }
+
+        return winnerRepo.findByCriteria(competitionId, resolvedYear, month);
     }
 }
-
