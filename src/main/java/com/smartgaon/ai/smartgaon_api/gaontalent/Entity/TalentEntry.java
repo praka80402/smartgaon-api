@@ -41,7 +41,14 @@ public class TalentEntry {
 
     private Integer comments = 0;
     private Integer likes = 0;
-    private String processingStatus;
+
+    private String processingStatus = "PENDING";
+
+    @Column(columnDefinition = "TEXT")
+    private String adminComment;
+
+    @Enumerated(EnumType.STRING)
+    private TalentProcessingStatus moderationStatus = TalentProcessingStatus.PENDING;
 
     private String thumbnailUrl;
 

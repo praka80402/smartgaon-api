@@ -110,15 +110,21 @@ public class TalentEntryController {
         );
     }
 
-    @GetMapping("/feed/my/{userId}")
+    @GetMapping({"/feed/my", "/feed/my/{userId}"})
     public ResponseEntity<?> getMyReels(
-            @PathVariable Long userId,
+            @PathVariable(required = false) Long userId,
+            @RequestParam(value = "userId", required = false) Long userIdParam,
             @RequestParam int page,
             @RequestParam int size
     ) {
 
+        Long resolvedUserId = userId != null ? userId : userIdParam;
+        if (resolvedUserId == null) {
+            return ResponseEntity.badRequest().body("userId is required");
+        }
+
         return ResponseEntity.ok(
-            service.getMyReels(userId, page, size)
+            service.getMyReels(resolvedUserId, page, size)
         );
     }
 
@@ -144,7 +150,5 @@ public class TalentEntryController {
                 service.getShareLink(id)
         );
     }
-
-
 
 }

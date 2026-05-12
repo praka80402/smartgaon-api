@@ -8,6 +8,7 @@ import org.springframework.data.domain.*;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentCategory;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentEntry;
+import com.smartgaon.ai.smartgaon_api.gaontalent.Entity.TalentProcessingStatus;
 import com.smartgaon.ai.smartgaon_api.gaontalent.Repository.*;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
@@ -71,7 +72,8 @@ public class TalentEntryService {
         entry.setProfileImageUrl(profileUrl);
         entry.setMediaUrl(resolvedMediaUrl);
         entry.setMediaType(mediaType);
-        entry.setProcessingStatus("READY");
+        entry.setProcessingStatus("PENDING");
+        entry.setModerationStatus(TalentProcessingStatus.PENDING);
         entry.setThumbnailUrl(category == TalentCategory.ART ? null : buildYouTubeThumbnail(resolvedMediaUrl));
 
         String ref = referenceService.generate();
@@ -253,7 +255,11 @@ public class TalentEntryService {
     }
     public Page<TalentEntry> getFeed(TalentCategory category, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        return entryRepo.findByCategory(category, pageable);
+        return entryRepo.findByCategoryAndModerationStatusAndBlockedFalse(
+            category,
+            TalentProcessingStatus.APPROVED,
+            pageable
+        );
     }
     
     public List<TalentCategory> getAllCategories(
@@ -262,7 +268,7 @@ public class TalentEntryService {
     ) {
 
         List<TalentCategory> categories =
-            entryRepo.findVisibleCategories(userId);
+            entryRepo.findVisibleCategories(userId, TalentProcessingStatus.APPROVED);
 
         if (first != null && categories.contains(first)) {
             categories.remove(first);
@@ -305,16 +311,25 @@ public class TalentEntryService {
 
         // Not logged in
         if (userId == null) {
-            return entryRepo.findByCategoryAndBlockedFalse(category, pageable);
+            return entryRepo.findByCategoryAndModerationStatusAndBlockedFalse(
+                category,
+                TalentProcessingStatus.APPROVED,
+                pageable
+            );
         }
 
         // Logged in (with report logic)
-        return entryRepo.findFeedWithReportLogic(category, userId, pageable);
+        return entryRepo.findFeedWithReportLogic(
+            category,
+            userId,
+            TalentProcessingStatus.APPROVED,
+            pageable
+        );
     }
 
     public List<Map<String, Object>> getTopLikedCategories() {
 
-        List<Object[]> data = entryRepo.findTopLikedCategories();
+        List<Object[]> data = entryRepo.findTopLikedCategories(TalentProcessingStatus.APPROVED);
 
         List<Map<String, Object>> result = new ArrayList<>();
 
@@ -342,14 +357,14 @@ public class TalentEntryService {
 
         // Not logged in
         if (userId == null) {
-            return entryRepo.findAllVisible(pageable);
+            return entryRepo.findAllVisible(TalentProcessingStatus.APPROVED, pageable);
         }
 
         // Logged in
-        return entryRepo.findAllForUser(userId, pageable);
+        return entryRepo.findAllForUser(userId, TalentProcessingStatus.APPROVED, pageable);
     }
 
-    public Page<TalentEntry> getMyReels(
+    public Page<Map<String, Object>> getMyReels(
             Long userId,
             int page,
             int size
@@ -358,7 +373,29 @@ public class TalentEntryService {
         Pageable pageable =
             PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        return entryRepo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        Page<TalentEntry> reels = entryRepo.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+        List<Map<String, Object>> content = new ArrayList<>();
+
+        for (TalentEntry entry : reels.getContent()) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", entry.getId());
+            item.put("userId", entry.getUserId());
+            item.put("name", entry.getName());
+            item.put("category", entry.getCategory());
+            item.put("profileImageUrl", entry.getProfileImageUrl());
+            item.put("mediaUrl", entry.getMediaUrl());
+            item.put("mediaType", entry.getMediaType());
+            item.put("thumbnailUrl", entry.getThumbnailUrl());
+            item.put("likes", entry.getLikes());
+            item.put("comments", entry.getComments());
+            item.put("processingStatus", entry.getProcessingStatus());
+            item.put("moderationStatus", entry.getModerationStatus());
+            item.put("adminComment", entry.getAdminComment());
+            item.put("createdAt", entry.getCreatedAt());
+            content.add(item);
+        }
+
+        return new PageImpl<>(content, pageable, reels.getTotalElements());
     }
     
  // ---------------- DELETE ENTRY ----------------
@@ -399,7 +436,5 @@ public class TalentEntryService {
 
         return result;
     }
-
-
 
 }

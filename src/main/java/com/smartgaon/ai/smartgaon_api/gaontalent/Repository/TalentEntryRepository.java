@@ -143,6 +143,21 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
 
     Page<TalentEntry> findByCategory(TalentCategory category, Pageable pageable);
 
+    @Query("""
+        SELECT e FROM TalentEntry e
+        WHERE e.category = :category
+        AND e.blocked = false
+        AND (
+            e.moderationStatus = :status
+            OR e.moderationStatus IS NULL
+        )
+    """)
+    Page<TalentEntry> findByCategoryAndModerationStatusAndBlockedFalse(
+        @Param("category") TalentCategory category,
+        @Param("status") TalentProcessingStatus processingStatus,
+        Pageable pageable
+    );
+
     List<TalentEntry> findByCompetitionId(Long competitionId);
      // 🔥 THIS IS REQUIRED
     Optional<TalentEntry> findByMediaConvertGuid(String mediaConvertGuid);
@@ -170,26 +185,22 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
         SELECT e FROM TalentEntry e
         WHERE e.category = :category
         AND (
-            e.userId = :userId
-            OR
-            (
-                e.blocked = false
-                AND e.id NOT IN (
-                    SELECT r.entryId FROM TalentReport r
-                    WHERE r.userId = :userId
-                )
+                e.userId = :userId
+                OR
+                (
+                    e.blocked = false
+                    AND e.moderationStatus = :status
+                    AND e.id NOT IN (
+                        SELECT r.entryId FROM TalentReport r
+                        WHERE r.userId = :userId
+                    )
             )
         )
     """)
     Page<TalentEntry> findFeedWithReportLogic(
         @Param("category") TalentCategory category,
         @Param("userId") Long userId,
-        Pageable pageable
-    );
-
-
-    Page<TalentEntry> findByCategoryAndBlockedFalse(
-        TalentCategory category,
+        @Param("status") TalentProcessingStatus status,
         Pageable pageable
     );
 
@@ -199,45 +210,47 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
         SELECT e.category, SUM(e.likes)
         FROM TalentEntry e
         WHERE e.blocked = false
+        AND e.moderationStatus = :status
         GROUP BY e.category
         ORDER BY SUM(e.likes) DESC
     """)
-    List<Object[]> findTopLikedCategories();
+    List<Object[]> findTopLikedCategories(
+        @Param("status") TalentProcessingStatus status
+    );
 
 
     // All visible (no login)
     @Query("""
         SELECT e FROM TalentEntry e
         WHERE e.blocked = false
+        AND e.moderationStatus = :status
         ORDER BY e.createdAt DESC
     """)
-    Page<TalentEntry> findAllVisible(Pageable pageable);
+    Page<TalentEntry> findAllVisible(
+        @Param("status") TalentProcessingStatus status,
+        Pageable pageable
+    );
 
 
     // All reels for logged user
     @Query("""
         SELECT e FROM TalentEntry e
-        WHERE
-        (
-            e.userId = :userId
-            OR
-            (
-                e.blocked = false
-                AND e.id NOT IN (
-                    SELECT r.entryId FROM TalentReport r
-                    WHERE r.userId = :userId
-                )
-            )
+        WHERE e.blocked = false
+        AND e.moderationStatus = :status
+        AND e.id NOT IN (
+            SELECT r.entryId FROM TalentReport r
+            WHERE r.userId = :userId
         )
         ORDER BY e.createdAt DESC
     """)
     Page<TalentEntry> findAllForUser(
         @Param("userId") Long userId,
+        @Param("status") TalentProcessingStatus status,
         Pageable pageable
     );
 
 
-    // Reels created by a specific user
+    // Reels created by a specific user, regardless of moderation status
     @Query("""
         SELECT e FROM TalentEntry e
         WHERE e.userId = :userId
@@ -255,24 +268,28 @@ public interface TalentEntryRepository extends JpaRepository<TalentEntry, Long> 
         FROM TalentEntry e
         WHERE
         (
-            :userId IS NULL
+            (
+                :userId IS NULL
+                AND e.blocked = false
+                AND e.moderationStatus = :status
+            )
+            OR
+            e.userId = :userId
             OR
             (
-                e.userId = :userId
-                OR
-                (
-                    e.blocked = false
-                    AND e.id NOT IN (
-                        SELECT r.entryId
-                        FROM TalentReport r
-                        WHERE r.userId = :userId
-                    )
+                e.blocked = false
+                AND e.moderationStatus = :status
+                AND e.id NOT IN (
+                    SELECT r.entryId
+                    FROM TalentReport r
+                    WHERE r.userId = :userId
                 )
             )
         )
     """)
     List<TalentCategory> findVisibleCategories(
-        @Param("userId") Long userId
+        @Param("userId") Long userId,
+        @Param("status") TalentProcessingStatus status
     );
 
 }
