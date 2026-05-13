@@ -41,7 +41,7 @@ public class WinnerService {
                 .toList();
     }
 
-    public List<TalentWinner> getWinnersByFilter(Long competitionId, Integer year, Integer month) {
+    public List<TalentEntry> getWinnersByFilter(Long competitionId, Integer year, Integer month) {
         if (competitionId == null && year == null && month == null) {
             throw new RuntimeException("At least one filter parameter is required.");
         }
@@ -51,6 +51,16 @@ public class WinnerService {
             resolvedYear = Year.now().getValue();
         }
 
-        return winnerRepo.findByCriteria(competitionId, resolvedYear, month);
+        List<Long> winnerIds = winnerRepo.findByCriteria(competitionId, resolvedYear, month)
+                .stream()
+                .map(TalentWinner::getEntryId)
+                .toList();
+
+        List<TalentEntry> winners = entryRepo.findAllById(winnerIds);
+        return winners.stream()
+                .sorted((a, b) -> Long.compare(
+                        winnerIds.indexOf(a.getId()),
+                        winnerIds.indexOf(b.getId())))
+                .toList();
     }
 }

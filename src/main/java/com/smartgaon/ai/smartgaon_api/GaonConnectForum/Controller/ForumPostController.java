@@ -145,9 +145,10 @@ public class ForumPostController {
             @RequestParam String content,
             @RequestParam String category,
             @RequestParam(required = false) String area,
-            @RequestParam("media") List<MultipartFile> mediaFiles
+            @RequestParam("media") List<MultipartFile> mediaFiles,
+            @RequestParam(required = false) String youtubeVideoUrl
     ) {
-        return postService.createWithMedia(userId, title, content, category, area, mediaFiles);
+        return postService.createWithMedia(userId, title, content, category, area, mediaFiles, youtubeVideoUrl);
     }
     
     

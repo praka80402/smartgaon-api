@@ -46,7 +46,8 @@ public interface ForumPostService {
             String content,
             String category,
             String area,
-            List<MultipartFile> mediaFiles
+            List<MultipartFile> mediaFiles,
+            String youtubeVideoUrl
     );
 
     // ⭐ NEW METHOD FOR EDITING POST + REPLACING ALL MEDIA FILES

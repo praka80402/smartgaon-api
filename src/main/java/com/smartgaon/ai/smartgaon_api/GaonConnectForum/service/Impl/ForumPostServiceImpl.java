@@ -1,6 +1,8 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.Impl;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,7 @@ public class ForumPostServiceImpl implements ForumPostService {
                 p.getArea(),
                 p.getUser() != null ? p.getUser().getProfileImageUrl() : null,
                 p.getMediaAttachments(),
+                p.getYoutubeVideoUrl(),
                 p.getLikeCount(),
                 p.getCommentCount(),
                 p.getStatus().name(),
@@ -79,6 +82,8 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (dto.mediaAttachments() != null) {
             post.setMediaAttachments(dto.mediaAttachments());
         }
+
+        post.setStatus(ForumPost.Status.PENDING);
 
         return map(postRepo.save(post));
     }
@@ -128,6 +133,8 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (dto.category() != null) post.setCategory(dto.category());
         if (dto.mediaAttachments() != null) post.setMediaAttachments(dto.mediaAttachments());
 
+        post.setStatus(ForumPost.Status.PENDING);
+
         return map(postRepo.save(post));
     }
 
@@ -173,6 +180,8 @@ public class ForumPostServiceImpl implements ForumPostService {
                 post.getMediaAttachments().add(uploadedUrl);
             }
         }
+
+        post.setStatus(ForumPost.Status.PENDING);
 
         return map(postRepo.save(post));
     }
@@ -255,6 +264,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         post.setContent(content);
         post.setCategory(category);
         post.setArea(area);
+        post.setStatus(ForumPost.Status.PENDING);
         post.getMediaAttachments().add(imageUrl);
 
         return map(postRepo.save(post));
@@ -269,7 +279,8 @@ public class ForumPostServiceImpl implements ForumPostService {
             String content,
             String category,
             String area,
-            List<MultipartFile> files
+            List<MultipartFile> files,
+            String youtubeVideoUrl
     ) {
 
         if (files.size() > 5) {
@@ -285,6 +296,15 @@ public class ForumPostServiceImpl implements ForumPostService {
         post.setContent(content);
         post.setCategory(category);
         post.setArea(area);
+        post.setStatus(ForumPost.Status.PENDING);
+
+        if (youtubeVideoUrl != null && !youtubeVideoUrl.trim().isEmpty()) {
+            String trimmed = youtubeVideoUrl.trim();
+            if (!isYouTubeUrl(trimmed)) {
+                throw new RuntimeException("Please provide a valid YouTube URL");
+            }
+            post.setYoutubeVideoUrl(trimmed);
+        }
 
         for (MultipartFile file : files) {
             String url = s3Service.uploadFile(file);
@@ -375,8 +395,16 @@ public class ForumPostServiceImpl implements ForumPostService {
                 .findVisiblePostsForUser(userId, pageable)
                 .map(this::map);
     }
-
-
-   
-
+    private boolean isYouTubeUrl(String url) {
+        try {
+            URI uri = URI.create(url);
+            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
+            return host.equals("youtube.com")
+                    || host.endsWith(".youtube.com")
+                    || host.equals("youtu.be")
+                    || host.endsWith(".youtu.be");
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+    }
 }

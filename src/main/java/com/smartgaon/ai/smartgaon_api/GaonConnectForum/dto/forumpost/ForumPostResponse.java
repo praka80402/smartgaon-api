@@ -41,6 +41,7 @@ public record ForumPostResponse(
         String area,
         String profileImage,
         List<String> mediaAttachments,
+        String youtubeVideoUrl,
         Long likeCount,
         Long commentCount,
         String status,
@@ -48,4 +49,3 @@ public record ForumPostResponse(
         Instant createdAt,
         Instant updatedAt
 ) {}
-

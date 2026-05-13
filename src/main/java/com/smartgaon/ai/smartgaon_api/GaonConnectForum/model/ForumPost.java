@@ -42,6 +42,9 @@ public class ForumPost {
     @Column(name = "media_url")
     private List<String> mediaAttachments = new ArrayList<>();
 
+    @Column(columnDefinition = "TEXT")
+    private String youtubeVideoUrl;
+
     // Area (optional)
     @Column(nullable = true)
     private String area;
@@ -71,5 +74,5 @@ public class ForumPost {
     @UpdateTimestamp
     private Instant updatedAt;
 
-    public enum Status { ACTIVE, MODERATED, DELETED }
+    public enum Status { PENDING, ACTIVE, MODERATED, DELETED }
 }
