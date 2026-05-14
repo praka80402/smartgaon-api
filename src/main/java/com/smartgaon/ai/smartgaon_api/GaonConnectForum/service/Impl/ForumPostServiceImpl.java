@@ -1,6 +1,7 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.Impl;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,6 +28,9 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class ForumPostServiceImpl implements ForumPostService {
+
+    private static final Collection<ForumPost.Status> VISIBLE_STATUSES =
+            List.of(ForumPost.Status.APPROVED, ForumPost.Status.ACTIVE, ForumPost.Status.MODERATED);
 
     @Autowired
     private ForumPostRepository postRepo;
@@ -98,22 +102,23 @@ public class ForumPostServiceImpl implements ForumPostService {
             throw new RuntimeException("Post not found");
         }
 
+        if (!VISIBLE_STATUSES.contains(post.getStatus())) {
+            throw new RuntimeException("Post not found");
+        }
+
         return map(post);
     }
 
     // ================= LIST POSTS (exclude deleted) =================
     @Override
     public Page<ForumPostResponse> list(Pageable pageable) {
-        return postRepo.findByDeletedFalse(pageable).map(this::map);
+        return postRepo.findVisiblePosts(VISIBLE_STATUSES, pageable).map(this::map);
     }
 
     // ================= SEARCH POSTS (still includes deleted handling on map usage) =================
     @Override
     public Page<ForumPostResponse> search(String query, Pageable pageable) {
-        // We reuse existing repository search method; filter deleted at mapping time by excluding deleted ones.
-        Page<ForumPost> page = postRepo.findByTitleContainingIgnoreCaseOrContentContainingIgnoreCase(query, query, pageable);
-        return page.map(p -> p.isDeleted() ? null : map(p))
-                   .map(r -> r); // allow mapping; controller should handle nulls if necessary
+        return postRepo.searchVisiblePosts(query, VISIBLE_STATUSES, pageable).map(this::map);
     }
 
     // ================= EDIT TEXT ONLY =================
@@ -132,6 +137,10 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (dto.content() != null) post.setContent(dto.content());
         if (dto.category() != null) post.setCategory(dto.category());
         if (dto.mediaAttachments() != null) post.setMediaAttachments(dto.mediaAttachments());
+        if (dto.youtubeVideoUrl() != null) {
+            String trimmed = dto.youtubeVideoUrl().trim();
+            post.setYoutubeVideoUrl(trimmed.isEmpty() ? null : trimmed);
+        }
 
         post.setStatus(ForumPost.Status.PENDING);
 
@@ -146,7 +155,7 @@ public class ForumPostServiceImpl implements ForumPostService {
             String title,
             String content,
             String category,
-            List<MultipartFile> newMediaFiles
+            String youtubeVideoUrl
     ) {
 
         ForumPost post = postRepo.findById(postId)
@@ -160,25 +169,12 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (title != null) post.setTitle(title);
         if (content != null) post.setContent(content);
         if (category != null) post.setCategory(category);
-
-        // Replace all media files
-        if (newMediaFiles != null && !newMediaFiles.isEmpty()) {
-
-            // 1) Delete old media from Cloudinary (best-effort)
-            for (String url : post.getMediaAttachments()) {
-                try {
-                    s3Service.deleteFile(url);
-                } catch (Exception ex) {
-                    // optionally log the failure and continue
-                }
+        if (youtubeVideoUrl != null) {
+            String trimmed = youtubeVideoUrl.trim();
+            if (!trimmed.isEmpty() && !isYouTubeUrl(trimmed)) {
+                throw new RuntimeException("Please provide a valid YouTube URL");
             }
-            post.getMediaAttachments().clear();
-
-            // 2) Upload new files
-            for (MultipartFile file : newMediaFiles) {
-                String uploadedUrl = s3Service.uploadFile(file);
-                post.getMediaAttachments().add(uploadedUrl);
-            }
+            post.setYoutubeVideoUrl(trimmed.isEmpty() ? null : trimmed);
         }
 
         post.setStatus(ForumPost.Status.PENDING);
@@ -205,7 +201,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (post.isDeleted()) {
             throw new RuntimeException("Post not found");
         }
-        post.setStatus(ForumPost.Status.valueOf(status));
+        post.setStatus(ForumPost.Status.valueOf(status.trim().toUpperCase(Locale.ROOT)));
         return map(postRepo.save(post));
     }
 
@@ -392,7 +388,7 @@ public class ForumPostServiceImpl implements ForumPostService {
             Pageable pageable
     ) {
         return postRepo
-                .findVisiblePostsForUser(userId, pageable)
+                .findVisiblePostsForUser(userId, VISIBLE_STATUSES, pageable)
                 .map(this::map);
     }
     private boolean isYouTubeUrl(String url) {

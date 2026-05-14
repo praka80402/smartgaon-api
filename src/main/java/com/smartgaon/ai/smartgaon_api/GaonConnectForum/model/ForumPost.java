@@ -74,5 +74,5 @@ public class ForumPost {
     @UpdateTimestamp
     private Instant updatedAt;
 
-    public enum Status { PENDING, ACTIVE, MODERATED, DELETED }
+    public enum Status { PENDING, APPROVED, ACTIVE, MODERATED, DELETED }
 }

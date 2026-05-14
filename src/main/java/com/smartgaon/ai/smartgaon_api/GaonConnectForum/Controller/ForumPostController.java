@@ -84,16 +84,16 @@ public class ForumPostController {
         return postService.update(id, dto);
     }
 
-    // ------------ EDIT MEDIA (Replace All Media Files) ----------
+    // ------------ EDIT POST MEDIA LINK ----------
     @PutMapping(value = "/{id}/edit-media", consumes = "multipart/form-data")
     public ForumPostResponse editMedia(
             @PathVariable Long id,
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String content,
             @RequestParam(required = false) String category,
-            @RequestParam("newMediaFiles") List<MultipartFile> newMediaFiles
+            @RequestParam(required = false) String youtubeVideoUrl
     ) {
-        return postService.editWithMedia(id, title, content, category, newMediaFiles);
+        return postService.editWithMedia(id, title, content, category, youtubeVideoUrl);
     }
 
     // ------------ LIKE/UNLIKE ----------

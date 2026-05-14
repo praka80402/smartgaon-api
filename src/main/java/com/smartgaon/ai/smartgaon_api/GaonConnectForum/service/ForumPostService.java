@@ -56,7 +56,7 @@ public interface ForumPostService {
             String title,
             String content,
             String category,
-            List<MultipartFile> newMediaFiles
+            String youtubeVideoUrl
     );
     
     ForumPostResponse reportPost(

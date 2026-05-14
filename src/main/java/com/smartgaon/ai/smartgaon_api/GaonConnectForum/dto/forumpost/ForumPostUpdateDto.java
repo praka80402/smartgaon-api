@@ -9,6 +9,7 @@ public record ForumPostUpdateDto(
 	        String category,
 	        Set<String> tags,
 //	        List<MultipartFile> newMediaFiles,
-	        List<String> mediaAttachments	
+	        List<String> mediaAttachments,
+	        String youtubeVideoUrl
 	        ) 
 {}
