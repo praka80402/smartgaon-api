@@ -1,14 +1,15 @@
 package com.smartgaon.ai.smartgaon_api.GaonConnectForum.service.Impl;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostCreateDto;
 import com.smartgaon.ai.smartgaon_api.GaonConnectForum.dto.forumpost.ForumPostResponse;
@@ -77,15 +78,24 @@ public class ForumPostServiceImpl implements ForumPostService {
         User user = userRepo.findById(dto.userId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        String youtubeVideoUrl = normalizeYouTubeUrl(dto.youtubeVideoUrl());
+        List<String> mediaAttachments = dto.mediaAttachments() == null
+                ? List.of()
+                : dto.mediaAttachments();
+
+        requireAtLeastOneMediaSource(mediaAttachments, youtubeVideoUrl);
+
         ForumPost post = new ForumPost();
         post.setUser(user);
         post.setTitle(dto.title());
         post.setContent(dto.content());
         post.setCategory(dto.category());
+        post.setArea(dto.area());
 
         if (dto.mediaAttachments() != null) {
-            post.setMediaAttachments(dto.mediaAttachments());
+            post.setMediaAttachments(new ArrayList<>(mediaAttachments));
         }
+        post.setYoutubeVideoUrl(youtubeVideoUrl);
 
         post.setStatus(ForumPost.Status.PENDING);
 
@@ -138,8 +148,7 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (dto.category() != null) post.setCategory(dto.category());
         if (dto.mediaAttachments() != null) post.setMediaAttachments(dto.mediaAttachments());
         if (dto.youtubeVideoUrl() != null) {
-            String trimmed = dto.youtubeVideoUrl().trim();
-            post.setYoutubeVideoUrl(trimmed.isEmpty() ? null : trimmed);
+            post.setYoutubeVideoUrl(normalizeYouTubeUrl(dto.youtubeVideoUrl()));
         }
 
         post.setStatus(ForumPost.Status.PENDING);
@@ -155,6 +164,7 @@ public class ForumPostServiceImpl implements ForumPostService {
             String title,
             String content,
             String category,
+            List<String> mediaAttachments,
             String youtubeVideoUrl
     ) {
 
@@ -169,12 +179,11 @@ public class ForumPostServiceImpl implements ForumPostService {
         if (title != null) post.setTitle(title);
         if (content != null) post.setContent(content);
         if (category != null) post.setCategory(category);
+        if (mediaAttachments != null) {
+            post.setMediaAttachments(new ArrayList<>(mediaAttachments));
+        }
         if (youtubeVideoUrl != null) {
-            String trimmed = youtubeVideoUrl.trim();
-            if (!trimmed.isEmpty() && !isYouTubeUrl(trimmed)) {
-                throw new RuntimeException("Please provide a valid YouTube URL");
-            }
-            post.setYoutubeVideoUrl(trimmed.isEmpty() ? null : trimmed);
+            post.setYoutubeVideoUrl(normalizeYouTubeUrl(youtubeVideoUrl));
         }
 
         post.setStatus(ForumPost.Status.PENDING);
@@ -279,7 +288,7 @@ public class ForumPostServiceImpl implements ForumPostService {
             String youtubeVideoUrl
     ) {
 
-        if (files.size() > 5) {
+        if (files != null && files.size() > 5) {
             throw new RuntimeException("Maximum 5 media files allowed");
         }
 
@@ -294,18 +303,16 @@ public class ForumPostServiceImpl implements ForumPostService {
         post.setArea(area);
         post.setStatus(ForumPost.Status.PENDING);
 
-        if (youtubeVideoUrl != null && !youtubeVideoUrl.trim().isEmpty()) {
-            String trimmed = youtubeVideoUrl.trim();
-            if (!isYouTubeUrl(trimmed)) {
-                throw new RuntimeException("Please provide a valid YouTube URL");
+        String normalizedYoutube = normalizeYouTubeUrl(youtubeVideoUrl);
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                String url = s3Service.uploadFile(file);
+                post.getMediaAttachments().add(url);
             }
-            post.setYoutubeVideoUrl(trimmed);
         }
+        post.setYoutubeVideoUrl(normalizedYoutube);
 
-        for (MultipartFile file : files) {
-            String url = s3Service.uploadFile(file);
-            post.getMediaAttachments().add(url);
-        }
+        requireAtLeastOneMediaSource(post.getMediaAttachments(), post.getYoutubeVideoUrl());
 
         return map(postRepo.save(post));
     }
@@ -390,6 +397,32 @@ public class ForumPostServiceImpl implements ForumPostService {
         return postRepo
                 .findVisiblePostsForUser(userId, VISIBLE_STATUSES, pageable)
                 .map(this::map);
+    }
+
+    private void requireAtLeastOneMediaSource(List<String> mediaAttachments, String youtubeVideoUrl) {
+        boolean hasMedia = mediaAttachments != null && !mediaAttachments.isEmpty();
+        boolean hasYoutube = youtubeVideoUrl != null && !youtubeVideoUrl.isBlank();
+
+        if (!hasMedia && !hasYoutube) {
+            throw new RuntimeException("Please provide mediaAttachments, youtubeVideoUrl, or both");
+        }
+    }
+
+    private String normalizeYouTubeUrl(String youtubeVideoUrl) {
+        if (youtubeVideoUrl == null) {
+            return null;
+        }
+
+        String trimmed = youtubeVideoUrl.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+
+        if (!isYouTubeUrl(trimmed)) {
+            throw new RuntimeException("Please provide a valid YouTube URL");
+        }
+
+        return trimmed;
     }
     private boolean isYouTubeUrl(String url) {
         try {

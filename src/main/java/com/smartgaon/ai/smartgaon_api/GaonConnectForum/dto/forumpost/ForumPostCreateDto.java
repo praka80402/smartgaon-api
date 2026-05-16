@@ -10,6 +10,6 @@ public record ForumPostCreateDto (
       String category,
       String area, 
 
-      List<String> mediaAttachments
+      List<String> mediaAttachments,
+      String youtubeVideoUrl
 ) {}
-

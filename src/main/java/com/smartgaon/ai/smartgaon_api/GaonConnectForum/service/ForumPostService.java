@@ -50,12 +50,12 @@ public interface ForumPostService {
             String youtubeVideoUrl
     );
 
-    // ⭐ NEW METHOD FOR EDITING POST + REPLACING ALL MEDIA FILES
     ForumPostResponse editWithMedia(
             Long postId,
             String title,
             String content,
             String category,
+            List<String> mediaAttachments,
             String youtubeVideoUrl
     );
     

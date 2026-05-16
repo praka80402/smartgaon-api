@@ -91,9 +91,10 @@ public class ForumPostController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String content,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) List<String> mediaAttachments,
             @RequestParam(required = false) String youtubeVideoUrl
     ) {
-        return postService.editWithMedia(id, title, content, category, youtubeVideoUrl);
+        return postService.editWithMedia(id, title, content, category, mediaAttachments, youtubeVideoUrl);
     }
 
     // ------------ LIKE/UNLIKE ----------
@@ -145,7 +146,7 @@ public class ForumPostController {
             @RequestParam String content,
             @RequestParam String category,
             @RequestParam(required = false) String area,
-            @RequestParam("media") List<MultipartFile> mediaFiles,
+            @RequestParam(value = "media", required = false) List<MultipartFile> mediaFiles,
             @RequestParam(required = false) String youtubeVideoUrl
     ) {
         return postService.createWithMedia(userId, title, content, category, area, mediaFiles, youtubeVideoUrl);
