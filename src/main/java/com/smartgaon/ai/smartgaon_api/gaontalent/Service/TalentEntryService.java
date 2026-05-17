@@ -37,6 +37,7 @@ public class TalentEntryService {
             Long competitionId,
             boolean isCompetition,
             MultipartFile profileImage,
+            String profileImageUrl,
             MultipartFile mediaFile,
             String mediaUrl
     ) throws Exception {
@@ -54,9 +55,9 @@ public class TalentEntryService {
                     .orElseThrow(() -> new Exception("Invalid competition"));
         }
 
-        String profileUrl = s3Service.uploadFile(profileImage);
-        String resolvedMediaUrl = resolveMediaUrl(category, mediaFile, mediaUrl);
-        String mediaType = resolveMediaType(category, mediaFile, resolvedMediaUrl);
+        String profileUrl = resolveProfileImageUrl(profileImage, profileImageUrl);
+        String resolvedMediaUrl = resolveMediaUrl(category, mediaFile, mediaUrl, profileImageUrl);
+        String mediaType = resolveMediaType(category, mediaFile, resolvedMediaUrl, profileImageUrl);
 
         TalentEntry entry = new TalentEntry();
         entry.setName(name);
@@ -95,6 +96,7 @@ public class TalentEntryService {
             Long competitionId,
             boolean isCompetition,
             MultipartFile profileImage,
+            String profileImageUrl,
             MultipartFile mediaFile,
             String mediaUrl
     ) throws Exception {
@@ -108,15 +110,29 @@ public class TalentEntryService {
                 competitionId,
                 isCompetition,
                 profileImage,
+                profileImageUrl,
                 mediaFile,
                 mediaUrl
         );
     }
 
+    private String resolveProfileImageUrl(MultipartFile profileImage, String profileImageUrl) {
+        if (profileImage != null && !profileImage.isEmpty()) {
+            return s3Service.uploadFile(profileImage);
+        }
+
+        if (profileImageUrl != null && !profileImageUrl.trim().isEmpty()) {
+            return profileImageUrl.trim();
+        }
+
+        throw new IllegalArgumentException("profileImage or profileImageUrl is required.");
+    }
+
     private String resolveMediaUrl(
             TalentCategory category,
             MultipartFile mediaFile,
-            String mediaUrl
+            String mediaUrl,
+            String profileImageUrl
     ) throws Exception {
 
         if (category == TalentCategory.ART) {
@@ -126,6 +142,10 @@ public class TalentEntryService {
 
             if (mediaUrl != null && !mediaUrl.trim().isEmpty()) {
                 return mediaUrl.trim();
+            }
+
+            if (profileImageUrl != null && !profileImageUrl.trim().isEmpty()) {
+                return profileImageUrl.trim();
             }
 
             throw new Exception("ART entries require either an image file or an image URL.");
@@ -146,12 +166,17 @@ public class TalentEntryService {
     private String resolveMediaType(
             TalentCategory category,
             MultipartFile mediaFile,
-            String resolvedMediaUrl
+            String resolvedMediaUrl,
+            String profileImageUrl
     ) {
 
         if (category == TalentCategory.ART) {
             if (mediaFile != null && !mediaFile.isEmpty()) {
                 return getExt(mediaFile);
+            }
+
+            if (resolvedMediaUrl != null && profileImageUrl != null && resolvedMediaUrl.equals(profileImageUrl.trim())) {
+                return getExtFromUrl(profileImageUrl);
             }
 
             return getExtFromUrl(resolvedMediaUrl);
