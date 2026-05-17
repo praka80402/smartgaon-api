@@ -5,6 +5,8 @@ import com.smartgaon.ai.smartgaon_api.donation.enums.CampaignType;
 import com.smartgaon.ai.smartgaon_api.donation.enums.State;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -17,9 +19,9 @@ public class CampaignResponse {
     private String description;
     private CampaignType type;
     private String state;
-    private Double targetAmount;
+	private Double targetAmount;
     private Double raisedAmount;
     private String imageUrl;
+    private List<String> mediaImages;
 }
-
 
