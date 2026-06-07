@@ -35,6 +35,20 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
+@ExceptionHandler(ResourceNotFoundException.class)
+public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("success", false);
+    body.put("error", "NOT_FOUND");
+    body.put("message", ex.getMessage());
+    body.put("timestamp", Instant.now());
+
+    return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(body);
+}
+
     // ✅ generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
