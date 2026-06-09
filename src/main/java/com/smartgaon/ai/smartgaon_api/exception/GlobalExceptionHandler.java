@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
                 .body(body);
     }
 
-@ExceptionHandler(ResourceNotFoundException.class)
+    @ExceptionHandler(ResourceNotFoundException.class)
 public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
 
     Map<String, Object> body = new LinkedHashMap<>();
@@ -48,6 +48,22 @@ public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
             .status(HttpStatus.NOT_FOUND)
             .body(body);
 }
+
+    @ExceptionHandler(com.smartgaon.ai.smartgaon_api.sewa.jobs.AlreadyAppliedException.class)
+    public ResponseEntity<?> handleAlreadyApplied(com.smartgaon.ai.smartgaon_api.sewa.jobs.AlreadyAppliedException ex) {
+
+        log.warn("Job application conflict: {}", ex.getMessage());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
+        body.put("error", "ALREADY_APPLIED");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now());
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(body);
+    }
 
     // ✅ generic fallback
     @ExceptionHandler(Exception.class)
