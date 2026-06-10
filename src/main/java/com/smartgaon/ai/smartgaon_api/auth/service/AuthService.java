@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class AuthService {
     // ======================================================
     public Map<String, Object> generateSignupOtp(String phone) {
 
-        String otp = "1235"; // FIXED OTP
+        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(1000, 10000));
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
         // Create new user only for OTP stage
@@ -55,7 +56,7 @@ public class AuthService {
                 "phone", phone
         );
     }
-    
+
  // ======================================================
  // UPDATE USER PROFILE
  // ======================================================
@@ -185,7 +186,7 @@ public class AuthService {
         repo.save(user);
 
         return ResponseEntity.ok(
-                Map.of("otp", otp, "message", "OTP generated successfully")
+                Map.of("message", "OTP generated successfully", "phone", mobile)
         );
     }
 
