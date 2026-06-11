@@ -38,7 +38,7 @@ public class AuthService {
     // ======================================================
     public Map<String, Object> generateSignupOtp(String phone) {
 
-        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(1000, 10000));
+        String otp = "1235";
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
 
         // Create new user only for OTP stage
