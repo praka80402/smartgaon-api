@@ -52,6 +52,37 @@ public class OtpService {
     }
 
     public Map<String, Object> sendOtp(String mobile) {
+        if (mobile == null || !mobile.matches("^[6-9]\\d{9}$")) {
+            throw new IllegalArgumentException("Please enter a valid 10-digit mobile number.");
+        }
+
+        Optional<User> existingUser = userRepository.findByPhone(mobile);
+
+        if (existingUser.isEmpty()) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", false);
+            response.put("message", "User not found");
+            response.put("navigate", "signup");
+            return response;
+        }
+
+        User user = existingUser.get();
+
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", false);
+            response.put("message", "Your account has been disabled by admin.");
+            return response;
+        }
+
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", false);
+            response.put("message", "You are no longer a user.");
+            response.put("deletedBy", user.getDeletedBy());
+            return response;
+        }
+
         String normalizedMobile = normalizeMobile(mobile);
         String otp = generateOtp();
 
