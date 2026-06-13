@@ -110,6 +110,7 @@ public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
     user.setDistrict(updatedUser.getDistrict());
     user.setArea(updatedUser.getArea());
     user.setPincode(updatedUser.getPincode());
+    user.setEmail(updatedUser.getEmail());
 
     updateProfileCompletion(user);
 
