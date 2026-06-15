@@ -148,6 +148,7 @@ public class BusinessPostService {
 
             return new BusinessResponse(
                     b.getId(),
+                    b.getUserId(),
                     b.getTitle(),
                     b.getDescription(),
                     b.getLocation(),
