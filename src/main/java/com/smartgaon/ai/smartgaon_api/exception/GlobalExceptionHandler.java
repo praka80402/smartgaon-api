@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -62,6 +63,19 @@ public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .body(body);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<?> handleResponseStatus(ResponseStatusException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
+        body.put("error", ex.getStatusCode().toString());
+        body.put("message", ex.getReason() != null ? ex.getReason() : "Request failed");
+        body.put("timestamp", Instant.now());
+
+        return ResponseEntity
+                .status(ex.getStatusCode())
                 .body(body);
     }
 
