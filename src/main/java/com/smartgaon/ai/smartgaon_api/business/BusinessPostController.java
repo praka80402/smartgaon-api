@@ -84,7 +84,7 @@ public class BusinessPostController {
     }
 
     /* ================= CLOSE ================= */
-    @PatchMapping("/{businessId}/close")
+    @PostMapping("/{businessId}/close")
     public ResponseEntity<?> close(
             @PathVariable Long businessId,
             @RequestParam Long userId
