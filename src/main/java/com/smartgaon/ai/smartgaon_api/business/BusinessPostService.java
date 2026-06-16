@@ -6,11 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -100,13 +101,33 @@ public class BusinessPostService {
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         if (!post.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to update this business"
+            );
         }
 
         post.setTitle(title);
         post.setDescription(description);
         post.setLocation(location);
         post.setBudget(budget);
+
+        return repo.save(post);
+    }
+
+    /* ================= CLOSE ================= */
+    public BusinessPost close(Long businessId, Long userId) {
+        BusinessPost post = repo.findById(businessId)
+                .orElseThrow(() -> new RuntimeException("Business not found"));
+
+        if (!post.getUserId().equals(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to close this business"
+            );
+        }
+
+        post.setStatus("CLOSE");
 
         return repo.save(post);
     }
@@ -118,7 +139,10 @@ public class BusinessPostService {
                 .orElseThrow(() -> new RuntimeException("Business not found"));
 
         if (!post.getUserId().equals(userId)) {
-            throw new RuntimeException("Unauthorized");
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You are not allowed to delete this business"
+            );
         }
 
         // delete images from S3
@@ -148,6 +172,7 @@ public class BusinessPostService {
 
             return new BusinessResponse(
                     b.getId(),
+                    b.getUserId(),
                     b.getTitle(),
                     b.getDescription(),
                     b.getLocation(),

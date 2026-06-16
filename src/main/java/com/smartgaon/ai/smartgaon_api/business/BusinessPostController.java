@@ -83,6 +83,17 @@ public class BusinessPostController {
         );
     }
 
+    /* ================= CLOSE ================= */
+    @PostMapping("/{businessId}/close")
+    public ResponseEntity<?> close(
+            @PathVariable Long businessId,
+            @RequestParam Long userId
+    ) {
+        return ResponseEntity.ok(
+                service.close(businessId, userId)
+        );
+    }
+
     /* ================= DELETE ================= */
     @DeleteMapping("/{businessId}")
     public ResponseEntity<?> delete(

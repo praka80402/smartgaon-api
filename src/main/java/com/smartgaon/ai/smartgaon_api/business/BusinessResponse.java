@@ -9,6 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 public class BusinessResponse {
     private Long id;
+    private Long employerId;
     private String title;
     private String description;
     private String location;

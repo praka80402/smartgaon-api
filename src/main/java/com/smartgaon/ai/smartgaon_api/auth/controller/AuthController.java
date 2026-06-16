@@ -7,6 +7,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
 import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
 import com.smartgaon.ai.smartgaon_api.model.User;
+import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,9 @@ public class AuthController {
 
     @Autowired
     private JwtUtil jwt;
+
+    @Autowired
+    private OtpService otpService;
 
     @Value("${google.client.native-id}")
     private String nativeClientId;
@@ -72,6 +76,28 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(auth.generateSignupOtp(phone));
+    }
+
+    // =====================================================
+    // SEND OTP FOR SIGNUP
+    // =====================================================
+    @PostMapping("/send-signup-otp")
+    public ResponseEntity<?> sendSignupOtp(@RequestParam String mobile) {
+
+        if (!mobile.matches("^[6-9]\\d{9}$")) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Please enter a valid 10-digit mobile number.")
+            );
+        }
+
+        Optional<User> existingUser = auth.findByPhone(mobile);
+        if (existingUser.isPresent()) {
+            return ResponseEntity.status(409).body(
+                    Map.of("error", "This number is already registered", "navigate", "login")
+            );
+        }
+
+        return ResponseEntity.ok(otpService.sendSignupOtp(mobile));
     }
 
     // =====================================================
