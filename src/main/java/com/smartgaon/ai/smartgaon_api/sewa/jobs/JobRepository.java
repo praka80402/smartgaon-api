@@ -13,7 +13,15 @@ import java.time.LocalDate;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
 
-    List<Job> findByEmployerId(Long employerId);
+    @Query("""
+        SELECT j
+        FROM Job j
+        WHERE j.employerId = :employerId
+        ORDER BY j.createdAt DESC
+    """)
+    List<Job> findByEmployerId(
+            @Param("employerId") Long employerId
+    );
 
     Page<Job> findByStatusNot(String status, Pageable pageable);
 
