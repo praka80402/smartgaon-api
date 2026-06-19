@@ -328,6 +328,8 @@ public ResponseEntity<?> getProfileImageByEmail(@PathVariable String email) {
         response.put("profileImageUrl", user.getProfileImageUrl());
         response.put("profileCompleted", user.isProfileCompleted());
         response.put("gaonsathi_image_url", user.getGaonSathiImageUrl());
+        response.put("occupation", user.getOccupation());
+        response.put("note", user.getNote());
 
         return response;
     }
