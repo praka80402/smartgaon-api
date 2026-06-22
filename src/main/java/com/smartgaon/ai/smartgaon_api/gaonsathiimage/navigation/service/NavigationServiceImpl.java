@@ -122,10 +122,14 @@ public class NavigationServiceImpl
 
         // =====================================
         // STEP 2 : Alias Matching
+        // (longest match wins, not first match)
         // =====================================
 
         List<NavigationAlias> aliases =
                 aliasRepository.findByActiveTrue();
+
+        NavigationAlias bestMatch = null;
+        int bestLength = -1;
 
         for (NavigationAlias alias : aliases) {
 
@@ -137,14 +141,24 @@ public class NavigationServiceImpl
                     normalizeText(
                             alias.getAliasText());
 
-            if (normalizedMessage
-                    .contains(aliasText)) {
-
-                return routeRepository
-                        .findByModuleCodeAndActiveTrue(
-                                alias.getModuleCode())
-                        .orElse(null);
+            if (aliasText.isEmpty()) {
+                continue;
             }
+
+            if (normalizedMessage.contains(aliasText)
+                    && aliasText.length() > bestLength) {
+
+                bestMatch = alias;
+                bestLength = aliasText.length();
+            }
+        }
+
+        if (bestMatch != null) {
+
+            return routeRepository
+                    .findByModuleCodeAndActiveTrue(
+                            bestMatch.getModuleCode())
+                    .orElse(null);
         }
 
         // =====================================
@@ -190,6 +204,9 @@ public class NavigationServiceImpl
         return text
                 .toLowerCase()
                 .trim()
+                .replaceAll(
+                        "[-_]",
+                        " ")
                 .replaceAll(
                         "[^a-zA-Z0-9\\u0900-\\u097F ]",
                         "")
