@@ -6,6 +6,8 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
 import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
+import com.smartgaon.ai.smartgaon_api.auth.service.RefreshTokenService;   // NEW
+import com.smartgaon.ai.smartgaon_api.auth.dto.RefreshResult;             // NEW
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
 
@@ -28,6 +30,9 @@ public class AuthController {
 
     @Autowired
     private OtpService otpService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;   // NEW
 
     @Value("${google.client.native-id}")
     private String nativeClientId;
@@ -111,11 +116,15 @@ public class AuthController {
 
         return auth.validate(email, password)
                 .map(user -> {
-                    String token = jwt.generate(email);
+                    String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
+                    String token = jwt.generate(email, role);
+                    RefreshResult rt = refreshTokenService.issue(
+                            String.valueOf(user.getId()),
+                            req.getOrDefault("platform", "unknown"));
                     return ResponseEntity.ok(Map.of(
                             "token", token,
-                            "user", user
-                    ));
+                            "refreshToken", rt.refreshToken(),
+                            "user", user));
                 })
                 .orElseGet(() -> ResponseEntity.status(401)
                         .body(Map.of("error", "Invalid email or password")));
@@ -155,10 +164,15 @@ public class AuthController {
                 return newUser;
             });
 
-            String jwtToken = jwt.generate(email);
+            String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
+            String jwtToken = jwt.generate(email, role);
+            RefreshResult rt = refreshTokenService.issue(
+                    String.valueOf(user.getId()),
+                    body.getOrDefault("platform", "unknown"));
 
             return ResponseEntity.ok(
-                    Map.of("token", jwtToken, "email", email, "name", name, "picture", picture)
+                    Map.of("token", jwtToken, "refreshToken", rt.refreshToken(),
+                           "email", email, "name", name, "picture", picture)
             );
 
         } catch (Exception e) {
@@ -196,10 +210,6 @@ public class AuthController {
     // =====================================================
     // OTP SEND (FOR LOGIN)
     // =====================================================
-//    @PostMapping("/send-otp")
-//    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
-//        return auth.sendOtp(mobile);
-//    }
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
 
@@ -208,7 +218,7 @@ public class AuthController {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
 
-            // 🆕 BLOCK LOGIN IF USER IS DELETED
+            // BLOCK LOGIN IF USER IS DELETED
             if (Boolean.TRUE.equals(user.getIsDeleted())) {
                 return ResponseEntity.status(403).body(
                         Map.of(
@@ -223,12 +233,8 @@ public class AuthController {
     }
 
     // =====================================================
-    // OTP VERIFY
+    // OTP VERIFY  (mobile OTP login -> issues access + refresh tokens)
     // =====================================================
-//    @PostMapping("/verify-otp")
-//    public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
-//        return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
-//    }
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
 
@@ -237,7 +243,7 @@ public class AuthController {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
 
-            // 🆕 BLOCK LOGIN IF USER IS DELETED
+            // BLOCK LOGIN IF USER IS DELETED
             if (Boolean.TRUE.equals(user.getIsDeleted())) {
                 return ResponseEntity.status(403).body(
                         Map.of(
@@ -248,7 +254,22 @@ public class AuthController {
             }
         }
 
-        return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
+        Map<String, Object> result = auth.verifyOtp(mobile, otp);
+
+        // On successful OTP verification, issue access + refresh tokens.
+        if (Boolean.TRUE.equals(result.get("verified"))) {
+            auth.findByPhone(mobile).ifPresent(user -> {
+                String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
+                // Mobile-only users may have no email; fall back to phone as the token subject.
+                String subject = (user.getEmail() != null && !user.getEmail().isBlank())
+                        ? user.getEmail() : user.getPhone();
+                result.put("token", jwt.generate(subject, role));
+                result.put("refreshToken",
+                        refreshTokenService.issue(String.valueOf(user.getId()), "unknown").refreshToken());
+            });
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     // =====================================================
@@ -260,8 +281,8 @@ public class AuthController {
     }
 
     // =====================================================
-// CHECK ACCOUNT STATUS (ACTIVE / DISABLED / DELETED)
-// =====================================================
+    // CHECK ACCOUNT STATUS (ACTIVE / DISABLED / DELETED)
+    // =====================================================
     @PostMapping("/account-status")
     public ResponseEntity<?> checkAccountStatus(@RequestBody Map<String, String> req) {
 
@@ -289,7 +310,7 @@ public class AuthController {
 
         User user = userOpt.get();
 
-        // 🛑 DELETED
+        // DELETED
         if (Boolean.TRUE.equals(user.getIsDeleted())) {
             return ResponseEntity.ok(
                     Map.of(
@@ -301,7 +322,7 @@ public class AuthController {
             );
         }
 
-        // 🛑 DISABLED (if you have this flag)
+        // DISABLED (if you have this flag)
         if (Boolean.FALSE.equals(user.getAccountEnabled())) {
             return ResponseEntity.ok(
                     Map.of(
@@ -313,7 +334,7 @@ public class AuthController {
             );
         }
 
-        // ✅ ACTIVE
+        // ACTIVE
         return ResponseEntity.ok(
                 Map.of(
                         "exists", true,
@@ -322,7 +343,6 @@ public class AuthController {
                 )
         );
     }
-
 
     // =====================================================
     // DELETE ACCOUNT
@@ -342,28 +362,28 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "Something went wrong"));
         }
     }
-    
- // =====================================================
- // UPDATE PROFILE
- // =====================================================
- @PutMapping("/update-profile/{id}")
- public ResponseEntity<?> updateProfile(
-         @PathVariable Long id,
-         @RequestBody Map<String, String> req) {
 
-     try {
-         User updatedUser = auth.updateUserProfile(id, req);
-         return ResponseEntity.ok(
-                 Map.of(
-                         "message", "Profile updated successfully",
-                         "user", updatedUser
-                 )
-         );
-     } catch (RuntimeException e) {
-         return ResponseEntity.status(400).body(
-                 Map.of("error", e.getMessage())
-         );
-     }
- }
+    // =====================================================
+    // UPDATE PROFILE
+    // =====================================================
+    @PutMapping("/update-profile/{id}")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> req) {
+
+        try {
+            User updatedUser = auth.updateUserProfile(id, req);
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message", "Profile updated successfully",
+                            "user", updatedUser
+                    )
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
 
 }
