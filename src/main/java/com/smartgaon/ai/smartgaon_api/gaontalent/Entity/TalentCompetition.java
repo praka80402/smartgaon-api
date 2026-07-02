@@ -16,6 +16,9 @@ public class TalentCompetition {
     private String name;
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    private TalentCategory category;
+
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
