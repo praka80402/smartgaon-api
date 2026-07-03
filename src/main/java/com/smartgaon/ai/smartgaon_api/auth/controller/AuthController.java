@@ -117,10 +117,10 @@ public class AuthController {
         return auth.validate(email, password)
                 .map(user -> {
                     String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
-                    String token = jwt.generate(email, role);
                     RefreshResult rt = refreshTokenService.issue(
                             String.valueOf(user.getId()),
                             req.getOrDefault("platform", "unknown"));
+                    String token = jwt.generate(email, role, rt.userId(), rt.sessionId());
                     return ResponseEntity.ok(Map.of(
                             "token", token,
                             "refreshToken", rt.refreshToken(),
@@ -165,10 +165,10 @@ public class AuthController {
             });
 
             String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
-            String jwtToken = jwt.generate(email, role);
             RefreshResult rt = refreshTokenService.issue(
                     String.valueOf(user.getId()),
                     body.getOrDefault("platform", "unknown"));
+            String jwtToken = jwt.generate(email, role, rt.userId(), rt.sessionId());
 
             return ResponseEntity.ok(
                     Map.of("token", jwtToken, "refreshToken", rt.refreshToken(),
@@ -263,9 +263,9 @@ public class AuthController {
                 // Mobile-only users may have no email; fall back to phone as the token subject.
                 String subject = (user.getEmail() != null && !user.getEmail().isBlank())
                         ? user.getEmail() : user.getPhone();
-                result.put("token", jwt.generate(subject, role));
-                result.put("refreshToken",
-                        refreshTokenService.issue(String.valueOf(user.getId()), "unknown").refreshToken());
+                RefreshResult rt = refreshTokenService.issue(String.valueOf(user.getId()), "unknown");
+                result.put("token", jwt.generate(subject, role, rt.userId(), rt.sessionId()));
+                result.put("refreshToken", rt.refreshToken());
             });
         }
 

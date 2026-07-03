@@ -152,6 +152,17 @@ public class RefreshTokenService {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Session check for the access-token filter.                         */
+    /* Returns true only if refresh:{userId}:{sessionId} still lives in   */
+    /* Redis. logout / logout-all delete that key, so a revoked session   */
+    /* returns false and the access token stops being trusted.            */
+    /* ------------------------------------------------------------------ */
+    public boolean sessionExists(String userId, String sessionId) {
+        if (userId == null || sessionId == null) return false;
+        return Boolean.TRUE.equals(redis.hasKey(key(userId, sessionId)));
+    }
+
+    /* ------------------------------------------------------------------ */
     /* List active sessions (for a "logged-in devices" screen).           */
     /* ------------------------------------------------------------------ */
     public List<SessionInfo> listSessions(String userId) {
