@@ -10,6 +10,8 @@ import com.smartgaon.ai.smartgaon_api.auth.service.RefreshTokenService;   // NEW
 import com.smartgaon.ai.smartgaon_api.auth.dto.RefreshResult;             // NEW
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
+import com.google.firebase.auth.FirebaseAuth;              // NEW (Firebase login)
+import com.google.firebase.auth.FirebaseToken;             // NEW (Firebase login)
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -270,6 +272,81 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(result);
+    }
+
+    // =====================================================
+    // FIREBASE LOGIN (website Google login)
+    // Website signs in with Firebase, then sends the Firebase ID token here.
+    // We verify it, find-or-create the user, and issue our own JWT + refresh
+    // token (Redis-backed) exactly like the other login flows.
+    // =====================================================
+    @PostMapping("/firebase")
+    public ResponseEntity<?> firebaseLogin(@RequestBody Map<String, String> body) {
+
+        String firebaseToken = body.get("token");
+        if (firebaseToken == null || firebaseToken.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Missing token"));
+        }
+
+        FirebaseToken decoded;
+        try {
+            // Verifies signature + expiry against Firebase. Throws if invalid.
+            decoded = FirebaseAuth.getInstance().verifyIdToken(firebaseToken);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("error", "Invalid Firebase token"));
+        }
+
+        String email = decoded.getEmail();
+        String uid = decoded.getUid();
+        String name = decoded.getName();
+        String picture = decoded.getPicture();
+
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.status(400).body(Map.of("error", "Firebase token has no email"));
+        }
+
+        // Find existing user by email, else create one (auto sign-up).
+        User user = auth.findByEmail(email).orElseGet(() -> {
+            User u = new User();
+            u.setEmail(email);
+            u.setFirstName(name);
+            u.setFirebaseUid(uid);
+            u.setAuthProvider("GOOGLE");
+            u.setVerified(true);
+            auth.saveUser(u);
+            return u;
+        });
+
+        // Block deleted / disabled accounts, same as other login flows.
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "You are no longer a user.",
+                    "deletedBy", user.getDeletedBy()));
+        }
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+            return ResponseEntity.status(403).body(Map.of(
+                    "error", "Your account has been disabled by admin."));
+        }
+
+        // Keep firebaseUid up to date for existing users who logged in before.
+        if (user.getFirebaseUid() == null || user.getFirebaseUid().isBlank()) {
+            user.setFirebaseUid(uid);
+            auth.saveUser(user);
+        }
+
+        String role = (user.getRoles() == null || user.getRoles().isBlank()) ? "USER" : user.getRoles();
+        RefreshResult rt = refreshTokenService.issue(
+                String.valueOf(user.getId()),
+                body.getOrDefault("platform", "web"));
+        String token = jwt.generate(email, role, rt.userId(), rt.sessionId());
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "refreshToken", rt.refreshToken(),
+                "email", email,
+                "name", name == null ? "" : name,
+                "picture", picture == null ? "" : picture,
+                "user", user));
     }
 
     // =====================================================
