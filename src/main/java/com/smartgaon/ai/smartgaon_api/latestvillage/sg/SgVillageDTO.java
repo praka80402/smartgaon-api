@@ -9,6 +9,7 @@ public class SgVillageDTO {
     private String name;
     private String district;
     private String state;
+    private String pincode;
     private String description;
     private List<String> images;
     private Boolean popularPlace;

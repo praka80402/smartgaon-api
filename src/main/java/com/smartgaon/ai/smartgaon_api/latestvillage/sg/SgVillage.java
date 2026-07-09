@@ -18,6 +18,7 @@ public class SgVillage {
     private String name;
     private String district;
     private String state;
+    private String pincode;
 
     @Column(columnDefinition = "TEXT")
     private String description;
