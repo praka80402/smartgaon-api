@@ -46,6 +46,16 @@ public class SgVillageService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
+    public SgVillageDTO findVillage(String name, String district, String state, String pincode) {
+        Map<Long, SgDevelopment> catalogue = catalogueById();
+        return villageRepo.findMatchingVillage(name, district, state, pincode)
+                .stream()
+                .findFirst()
+                .map(v -> toDTO(v, catalogue))
+                .orElse(null);
+    }
+
     private Map<Long, SgDevelopment> catalogueById() {
         return developmentRepo.findAll().stream()
                 .collect(Collectors.toMap(SgDevelopment::getId, Function.identity(), (a, b) -> a));
@@ -57,6 +67,7 @@ public class SgVillageService {
         dto.setName(v.getName());
         dto.setDistrict(v.getDistrict());
         dto.setState(v.getState());
+        dto.setPincode(v.getPincode());
         dto.setDescription(v.getDescription());
         dto.setImages(v.getImages() != null ? new ArrayList<>(v.getImages()) : new ArrayList<>());
         dto.setPopularPlace(v.getPopularPlace());

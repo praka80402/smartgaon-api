@@ -36,4 +36,15 @@ public class SgVillageController {
     public SgVillageDTO byId(@PathVariable Long id) {
         return service.getById(id);
     }
+
+    /* Find matching admin-created village by name, district, state and pincode */
+    @GetMapping("/find")
+    public SgVillageDTO findVillage(
+            @RequestParam String name,
+            @RequestParam String district,
+            @RequestParam String state,
+            @RequestParam(required = false) String pincode
+    ) {
+        return service.findVillage(name, district, state, pincode);
+    }
 }
