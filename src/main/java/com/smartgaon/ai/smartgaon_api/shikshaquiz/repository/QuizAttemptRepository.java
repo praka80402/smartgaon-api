@@ -17,4 +17,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
     List<QuizAttempt> findTop5ByUserIdAndEndTimeIsNotNullOrderByEndTimeDesc(Long userId);
 
     long countByUserIdAndEndTimeIsNotNull(Long userId);
+
+    boolean existsByUserIdAndSegmentKeyAndSetNumber(Long userId, String segmentKey, String setNumber);
 }

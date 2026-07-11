@@ -39,10 +39,13 @@ public class QuizAttempt {
     private LocalDateTime endTime;
 
     // 5 AM anchored quiz-day this attempt belongs to
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDate quizDay;
 
     private boolean extraTimeGranted = false;
+
+    @Column(name = "set_number", length = 20)
+    private String setNumber;
 
     private Integer score;
 
@@ -124,4 +127,7 @@ public class QuizAttempt {
 
     public List<AttemptAnswer> getAnswers() { return answers; }
     public void setAnswers(List<AttemptAnswer> answers) { this.answers = answers; }
+
+    public String getSetNumber() { return setNumber; }
+    public void setSetNumber(String setNumber) { this.setNumber = setNumber; }
 }

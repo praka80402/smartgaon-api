@@ -72,6 +72,9 @@ public class Question {
 
     private boolean isActive = true;
 
+    @Column(name = "set_number", length = 20)
+    private String setNumber;
+
     // GETTERS & SETTERS
 
     public Long getId() { return id; }
@@ -124,4 +127,7 @@ public class Question {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+
+    public String getSetNumber() { return setNumber; }
+    public void setSetNumber(String setNumber) { this.setNumber = setNumber; }
 }
