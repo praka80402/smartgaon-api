@@ -70,7 +70,7 @@ public class SgVillageService {
                 pd.setId(pp.getId());
                 pd.setName(pp.getName());
                 pd.setDescription(pp.getDescription());
-                pd.setPhoto(pp.getPhoto());
+                pd.setPhotos(pp.getPhotos());
                 pd.setVideoUrl(pp.getVideoUrl());
                 places.add(pd);
             }
