@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -16,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final JwtAuthFilter jwtAuthFilter;
+	
+	
+	private final JwtAuthFilter jwtAuthFilter;
 
     @Bean
     public SecurityFilterChain filter(HttpSecurity http) throws Exception {
@@ -29,10 +28,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-
+                    
                     // IMPORTANT: allow all Vercel domains
                     config.setAllowedOriginPatterns(List.of(
-                            "*"
+                    		"*"
 //                        "https://*.vercel.app"        // All Vercel URLs
                     ));
 
@@ -44,49 +43,37 @@ public class SecurityConfig {
                     return config;
                 }))
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+//                .authorizeHttpRequests(auth -> auth
+//                        // 1️⃣ Public Admin login/register
+//                        .requestMatchers("/api/admin/login", "/api/admin/register").permitAll()
+//
+//                        // 2️⃣ Public user access
+//                        .requestMatchers(HttpMethod.GET, "/api/community/events/**").permitAll()
+//                        .requestMatchers(HttpMethod.GET, "/api/community/news/**").permitAll()
+//                        .requestMatchers("/api/auth/**", "/uploads/**", "/api/pdf/**").permitAll()
+//
+//                        // 3️⃣ Admin-only endpoints (must be ABOVE /api/admin/**)
+//                        .requestMatchers("/api/admin/users/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.POST, "/api/community/events/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/community/events/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.POST, "/api/community/news/**").hasAuthority("ADMIN")
+//                        .requestMatchers(HttpMethod.DELETE, "/api/community/news/**").hasAuthority("ADMIN")
+//
+//                        // 4️⃣ Protect all other admin URLs
+//                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+//
+//                        // 5️⃣ Allow all remaining endpoints
+//                        .anyRequest().permitAll()
                 .authorizeHttpRequests(auth -> auth
-
-                        // ---- Always allow CORS pre-flight (OPTIONS) ----
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // ===========================================================
-                        // PUBLIC (no login)
-                        // ===========================================================
-
-                        // Auth + OTP + system
-                        .requestMatchers("/api/auth/**", "/api/otp/**").permitAll()
-                        .requestMatchers("/uploads/**", "/api/pdf/**", "/api/weather/**").permitAll()
-
-                        // SmartGaon (villages) — fully public
-                        .requestMatchers("/api/villages/**").permitAll()
-
-                        // Media & Press — fully public
-                        .requestMatchers("/api/media-gallery/**").permitAll()
-
-                        // Stay Enquiry — public (guest enquiry)
-                        .requestMatchers("/api/enquiries/**").permitAll()
-
-                        // Donation — sirf public listing dikhe; personal history/receipt login ke baad
-                        .requestMatchers(HttpMethod.GET, "/api/donations/projects", "/api/donations/programs").permitAll()
-                       // /my/**, /receipt/**, /yearly/** → automatically protected (anyRequest().authenticated() se)
-
-                        // Gaon Talent — VIEW only public; like/comment/post (POST/PUT/DELETE) needs login
-                        .requestMatchers(HttpMethod.GET, "/api/gaon-talent/**").permitAll()
-
-                        // ===========================================================
-                        // ADMIN endpoints — left OPEN for now (managed by a separate system)
-                        // ===========================================================
-                        .requestMatchers("/api/admin/**", "/admin/**", "/offers/**").permitAll()
-
-                        // ===========================================================
-                        // EVERYTHING ELSE — login required
-                        // (profile, jobs, business, forum, events, banners, user/**,
-                        //  community, donations POST, gaon-talent POST, etc.)
-                        // ===========================================================
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/otp/**", "/api/pdf/**").permitAll()
+                        .requestMatchers("/api/community/**", "/api/gaon-talent/competition", "/api/media-gallery/**", "/api/states/**").permitAll()
+                        .requestMatchers("/api/dashboard-stats/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
