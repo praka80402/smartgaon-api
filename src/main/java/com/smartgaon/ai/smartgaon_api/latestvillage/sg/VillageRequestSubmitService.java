@@ -57,7 +57,7 @@ public class VillageRequestSubmitService {
                                        @Value("${aws.region:ap-south-1}") String region,
                                        @Value("${aws.accessKeyId:}") String accessKey,
                                        @Value("${aws.secretAccessKey:}") String secretKey,
-                                       @Value("${app.files.base-url:http://localhost:8080}") String baseUrl) {
+                                       @Value("${app.files.base-url:https://smartgaon.duckdns.org}") String baseUrl) {
         this.requestRepo = requestRepo;
         this.bucket = bucket;
         this.region = region;
