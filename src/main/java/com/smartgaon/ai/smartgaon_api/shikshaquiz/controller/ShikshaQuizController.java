@@ -30,8 +30,9 @@ public class ShikshaQuizController {
     // ---------- Start quiz ----------
     @PostMapping("/start")
     public ResponseEntity<?> start(@RequestParam Long userId,
-                                   @RequestParam String segmentKey) {
-        return ResponseEntity.ok(quizService.startQuiz(userId, segmentKey));
+                                   @RequestParam String segmentKey,
+                                   @RequestParam(required = false, defaultValue = "EN") String language) {
+        return ResponseEntity.ok(quizService.startQuiz(userId, segmentKey, language));
     }
 
     // ---------- One-time extra time ----------

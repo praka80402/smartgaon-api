@@ -29,6 +29,7 @@ public class QuizDtos {
 
     public static class SubmitQuizRequest {
         public Long attemptId;
+        public Integer timeTakenSeconds;
         public List<AnswerDto> answers;
     }
 
