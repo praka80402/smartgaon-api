@@ -40,17 +40,18 @@ public class QuizService {
     // ---------- Start quiz ----------
 
     @Transactional
-    public Object startQuiz(Long userId, String segmentKey) {
+    public Object startQuiz(Long userId, String segmentKey, String language) {
+        String lang = (language != null && !language.trim().isEmpty()) ? language.trim().toUpperCase() : "EN";
         LocalDateTime now = LocalDateTime.now();
         SegmentType segmentType = segmentKey.startsWith("CLASS_")
                 ? SegmentType.ACADEMIC : SegmentType.COMPETITION;
-        String competitionType = segmentType == SegmentType.COMPETITION ? segmentKey : null;
+        String competitionType = segmentType == SegmentType.COMPETITION ? segmentKey.toUpperCase().replace(" ", "_") : null;
 
         CompetitionConfig config = configRepo.findByCompetitionType(
                 segmentType == SegmentType.COMPETITION ? competitionType : academicConfigKey(segmentKey))
                 .orElse(null);
 
-        // Fetch all available set numbers for this segment
+        // Fetch all available set numbers for this segment and language
         List<String> allSetNumbers;
         String classLevel = null;
         String subject = null;
@@ -79,17 +80,17 @@ public class QuizService {
                 classLevel = underscore > 0 ? rest.substring(0, underscore) : rest;
                 subject = underscore > 0 ? rest.substring(underscore + 1).replace("_", " ") : null;
             }
-            allSetNumbers = questionRepo.findDistinctSetNumbersForAcademic(classLevel, subject);
+            allSetNumbers = questionRepo.findDistinctSetNumbersForAcademicAndLanguage(classLevel, subject, lang);
         } else {
-            allSetNumbers = questionRepo.findDistinctSetNumbersForCompetition(competitionType);
+            allSetNumbers = questionRepo.findDistinctSetNumbersForCompetitionAndLanguage(competitionType, lang);
         }
 
         if (allSetNumbers == null || allSetNumbers.isEmpty()) {
-            throw new IllegalStateException("No questions available for segment: " + segmentKey);
+            throw new IllegalStateException("No questions available for segment: " + segmentKey + " in language: " + lang);
         }
 
         // Check unattempted sets via Redis with DB fallback
-        String redisKey = COMPLETED_SETS_KEY_PREFIX + userId + ":" + segmentKey;
+        String redisKey = COMPLETED_SETS_KEY_PREFIX + userId + ":" + segmentKey + ":" + lang;
         List<String> unattemptedSets = new ArrayList<>();
         for (String setNum : allSetNumbers) {
             Boolean isCompleted = redis.setContains(redisKey, setNum);
@@ -114,14 +115,14 @@ public class QuizService {
         int randomIndex = new java.util.Random().nextInt(unattemptedSets.size());
         String selectedSetNumber = unattemptedSets.get(randomIndex);
 
-        // Fetch questions for selected set
+        // Fetch questions for selected set and language
         List<Question> questions;
         if (segmentType == SegmentType.ACADEMIC) {
-            questions = questionRepo.findAcademicQuestions(
-                    SegmentType.ACADEMIC, classLevel, subject, selectedSetNumber, Question.Status.PUBLISHED);
+            questions = questionRepo.findAcademicQuestionsAndLanguage(
+                    SegmentType.ACADEMIC, classLevel, subject, selectedSetNumber, Question.Status.PUBLISHED, lang);
         } else {
-            questions = questionRepo.findBySegmentTypeAndCompetitionTypeAndSetNumberAndStatusAndIsActiveTrue(
-                    SegmentType.COMPETITION, competitionType, selectedSetNumber, Question.Status.PUBLISHED);
+            questions = questionRepo.findBySegmentTypeAndCompetitionTypeAndSetNumberAndStatusAndLanguageAndIsActiveTrue(
+                    SegmentType.COMPETITION, competitionType, selectedSetNumber, Question.Status.PUBLISHED, lang);
         }
 
         if (questions == null || questions.isEmpty()) {
@@ -243,7 +244,11 @@ public class QuizService {
         // Save completed set to Redis
         if (attempt.getSetNumber() != null) {
             String redisKey = COMPLETED_SETS_KEY_PREFIX + attempt.getUserId() + ":" + attempt.getSegmentKey();
-            redis.setAdd(redisKey, attempt.getSetNumber());
+            try {
+                redis.setAdd(redisKey, attempt.getSetNumber());
+            } catch (Exception e) {
+                // Ignore Redis errors gracefully
+            }
         }
 
         QuizResultResponse result = new QuizResultResponse();
