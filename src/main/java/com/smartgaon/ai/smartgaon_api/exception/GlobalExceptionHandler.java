@@ -79,6 +79,17 @@ public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
                 .body(body);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> handleIllegalState(IllegalStateException ex) {
+        log.error("Illegal state exception: {}", ex.getMessage());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", false);
+        body.put("error", "BAD_REQUEST");
+        body.put("message", ex.getMessage());
+        body.put("timestamp", Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     // ✅ generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {

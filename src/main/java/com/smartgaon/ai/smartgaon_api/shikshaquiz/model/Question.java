@@ -75,6 +75,9 @@ public class Question {
     @Column(name = "set_number", length = 20)
     private String setNumber;
 
+    @Column(length = 5, nullable = false)
+    private String language = "EN";
+
     // GETTERS & SETTERS
 
     public Long getId() { return id; }
@@ -130,4 +133,7 @@ public class Question {
 
     public String getSetNumber() { return setNumber; }
     public void setSetNumber(String setNumber) { this.setNumber = setNumber; }
+
+    public String getLanguage() { return language; }
+    public void setLanguage(String language) { this.language = language != null ? language : "EN"; }
 }
