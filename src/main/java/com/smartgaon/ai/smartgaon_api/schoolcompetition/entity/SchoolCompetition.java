@@ -39,6 +39,11 @@ public class SchoolCompetition {
     @Column(name = "verification_code", nullable = false, length = 50)
     private String verificationCode; // Single shared code for all participating schools
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "school_competition_participating_schools", joinColumns = @JoinColumn(name = "competition_db_id"))
+    @Column(name = "school_name")
+    private java.util.List<String> participatingSchools = new java.util.ArrayList<>();
+
     @Builder.Default
     @Column(name = "is_live", nullable = false)
     private Boolean isLive = true;

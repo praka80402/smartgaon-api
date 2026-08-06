@@ -86,7 +86,10 @@ public class QuizService {
         }
 
         if (allSetNumbers == null || allSetNumbers.isEmpty()) {
-            throw new IllegalStateException("No questions available for segment: " + segmentKey + " in language: " + lang);
+            AttemptLimitResponse limitResp = new AttemptLimitResponse();
+            limitResp.limitReached = true;
+            limitResp.message = "No quiz questions uploaded yet for this category. Please check back soon!";
+            return limitResp;
         }
 
         // Check unattempted sets via Redis with DB fallback
