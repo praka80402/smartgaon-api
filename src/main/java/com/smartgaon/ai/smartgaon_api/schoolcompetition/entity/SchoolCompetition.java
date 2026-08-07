@@ -56,6 +56,10 @@ public class SchoolCompetition {
     @Column(nullable = false, length = 20)
     private String status = "LIVE"; // DRAFT, LIVE, EVALUATION, COMPLETED
 
+    @Builder.Default
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -18,7 +18,7 @@ public class SchoolCompetitionService {
     private final SchoolCompetitionSubmissionRepository submissionRepository;
 
     public List<SchoolCompetition> getActiveCompetitions() {
-        return competitionRepository.findByIsLiveTrue();
+        return competitionRepository.findByIsLiveTrueAndIsDeletedFalse();
     }
 
     public SchoolCompetition getCompetitionById(String competitionId) {
