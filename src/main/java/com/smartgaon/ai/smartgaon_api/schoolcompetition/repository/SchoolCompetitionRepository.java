@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface SchoolCompetitionRepository extends JpaRepository<SchoolCompetition, Long> {
     Optional<SchoolCompetition> findByCompetitionId(String competitionId);
+    List<SchoolCompetition> findByIsLiveTrueAndIsDeletedFalse();
     List<SchoolCompetition> findByIsLiveTrue();
     List<SchoolCompetition> findByStatus(String status);
 }
