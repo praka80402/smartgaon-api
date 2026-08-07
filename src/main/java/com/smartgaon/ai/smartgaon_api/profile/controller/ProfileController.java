@@ -200,6 +200,35 @@ public ResponseEntity<?> uploadImageByEmail(
     }
 }
 
+    @PostMapping("/upload-background/{phone}")
+    public ResponseEntity<?> uploadBackgroundImage(@PathVariable String phone, @RequestParam("file") MultipartFile file) {
+        try {
+            Optional<User> userOpt = userRepository.findByPhone(phone);
+            if (userOpt.isEmpty()) return ResponseEntity.status(404).body("User not found");
+            User user = userOpt.get();
+            String imageUrl = s3Service.uploadFile(file);
+            user.setBackgroundImageUrl(imageUrl);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Background image updated!", "backgroundImageUrl", imageUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Upload failed: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/upload-background/email/{email}")
+    public ResponseEntity<?> uploadBackgroundImageByEmail(@PathVariable String email, @RequestParam("file") MultipartFile file) {
+        try {
+            Optional<User> userOpt = userRepository.findByEmail(email);
+            if (userOpt.isEmpty()) return ResponseEntity.status(404).body("User not found");
+            User user = userOpt.get();
+            String imageUrl = s3Service.uploadFile(file);
+            user.setBackgroundImageUrl(imageUrl);
+            userRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Background image updated!", "backgroundImageUrl", imageUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Upload failed: " + e.getMessage());
+        }
+    }
     @PostMapping("/update-gaon-sathi-avatar/{phone}")
      public ResponseEntity<?> updateGaonSathiAvatar(
         @PathVariable String phone,
@@ -330,7 +359,7 @@ public ResponseEntity<?> getProfileImageByEmail(@PathVariable String email) {
         response.put("gaonsathi_image_url", user.getGaonSathiImageUrl());
         response.put("occupation", user.getOccupation());
         response.put("note", user.getNote());
-
+      response.put("backgroundimage_url", user.getBackgroundImageUrl());
         return response;
     }
 }

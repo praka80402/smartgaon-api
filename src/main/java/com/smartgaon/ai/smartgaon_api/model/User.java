@@ -88,4 +88,6 @@ public class User {
     @Column(name = "gaonsathi_image_url")
     private String gaonSathiImageUrl;
 
+   @Column(name = "backgroundimage_url")
+   private String backgroundImageUrl;
 }
