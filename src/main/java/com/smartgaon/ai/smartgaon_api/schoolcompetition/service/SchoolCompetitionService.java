@@ -40,8 +40,10 @@ public class SchoolCompetitionService {
         SchoolCompetition competition = getCompetitionById(submission.getCompetitionId());
 
         // 1. Validate Verification Code (Single code for all schools)
-        if (!competition.getVerificationCode().equalsIgnoreCase(verificationCode.trim())) {
-            throw new IllegalArgumentException("Invalid School Verification Code");
+        String expectedCode = competition.getVerificationCode() != null ? competition.getVerificationCode().trim() : "";
+        String providedCode = verificationCode != null ? verificationCode.trim() : "";
+        if (!expectedCode.equalsIgnoreCase(providedCode)) {
+            throw new IllegalArgumentException("Invalid School Verification Code: '" + providedCode + "' does not match competition code.");
         }
 
         // 2. Enforce Duplicate Check (One entry per competition per student/roll no)

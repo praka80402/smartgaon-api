@@ -46,7 +46,7 @@ public class SchoolCompetitionSubmission {
     @Column(name = "entry_description", columnDefinition = "TEXT")
     private String entryDescription;
 
-    @Column(name = "video_url", nullable = false, length = 1000)
+    @Column(name = "video_url", nullable = false, columnDefinition = "LONGTEXT")
     private String videoUrl;
 
     @Builder.Default

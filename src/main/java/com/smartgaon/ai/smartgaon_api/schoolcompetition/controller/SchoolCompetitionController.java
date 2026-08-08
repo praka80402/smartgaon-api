@@ -65,6 +65,7 @@ public class SchoolCompetitionController {
     }
 
     @Data
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
     public static class SubmissionRequest {
         private String competitionId;
         private String studentName;
@@ -74,6 +75,7 @@ public class SchoolCompetitionController {
         private String groupCategory;
         private String entryTitle;
         private String entryDescription;
+        private String submissionType;
         private String videoUrl;
         private String verificationCode;
     }
