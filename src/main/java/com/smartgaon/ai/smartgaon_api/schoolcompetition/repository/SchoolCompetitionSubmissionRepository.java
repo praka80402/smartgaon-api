@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface SchoolCompetitionSubmissionRepository extends JpaRepository<SchoolCompetitionSubmission, Long> {
     Optional<SchoolCompetitionSubmission> findBySubmissionId(String submissionId);
     List<SchoolCompetitionSubmission> findByCompetitionId(String competitionId);
-    boolean existsByCompetitionIdAndSchoolNameAndRollNumber(String competitionId, String schoolName, String rollNumber);
+    boolean existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(String competitionId, String groupCategory, String classGrade, String schoolName, String rollNumber);
     List<SchoolCompetitionSubmission> findBySchoolNameAndRollNumber(String schoolName, String rollNumber);
 }

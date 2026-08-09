@@ -64,6 +64,44 @@ public class S3Service {
         }
     }
 
+    public String uploadBase64File(String base64Data, String prefix) {
+        try {
+            String[] parts = base64Data.split(",");
+            String metadata = parts[0];
+            String base64Content = parts[1];
+
+            String contentType = metadata.substring(metadata.indexOf(":") + 1, metadata.indexOf(";"));
+            String extension = contentType.substring(contentType.indexOf("/") + 1);
+
+            if (extension.contains("officedocument")) {
+                extension = "docx";
+            } else if (extension.contains("sheet")) {
+                extension = "xlsx";
+            }
+
+            byte[] bytes = java.util.Base64.getDecoder().decode(base64Content);
+
+            String safePrefix = prefix == null ? "" : prefix;
+            if (!safePrefix.isEmpty() && !safePrefix.endsWith("/")) {
+                safePrefix = safePrefix + "/";
+            }
+
+            String key = safePrefix + UUID.randomUUID().toString() + "." + extension;
+
+            PutObjectRequest request = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(key)
+                    .contentType(contentType)
+                    .build();
+
+            s3Client.putObject(request, RequestBody.fromBytes(bytes));
+
+            return getPublicUrl(key);
+        } catch (Exception e) {
+            throw new RuntimeException("S3 base64 file upload failed: " + e.getMessage(), e);
+        }
+    }
+
     /** Build public URL (if bucket/object is public) */
     private String getPublicUrl(String key) {
         return "https://" + bucket + ".s3.ap-south-1.amazonaws.com/" + key;

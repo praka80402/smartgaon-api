@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "school_competition_submissions", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_comp_student", columnNames = {"competition_id", "school_name", "roll_number"})
+    @UniqueConstraint(name = "uk_comp_student_new", columnNames = {"competition_id", "group_category", "class_grade", "school_name", "roll_number"})
 })
 @Getter
 @Setter
@@ -52,6 +52,9 @@ public class SchoolCompetitionSubmission {
     @Builder.Default
     @Column(nullable = false, length = 30)
     private String status = "SUBMITTED"; // SUBMITTED, UNDER_REVIEW, WINNER_ANNOUNCED
+
+    @Column(name = "submitted_by", length = 150)
+    private String submittedBy;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
