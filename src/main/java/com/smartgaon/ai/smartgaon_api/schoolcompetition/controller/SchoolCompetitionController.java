@@ -23,6 +23,16 @@ public class SchoolCompetitionController {
         return ResponseEntity.ok(competitionService.getActiveCompetitions());
     }
 
+    @GetMapping("/debug-competitions")
+    public ResponseEntity<List<SchoolCompetition>> debugCompetitions() {
+        return ResponseEntity.ok(competitionService.debugAllCompetitions());
+    }
+
+    @GetMapping("/debug-submissions")
+    public ResponseEntity<List<SchoolCompetitionSubmission>> debugSubmissions() {
+        return ResponseEntity.ok(competitionService.debugAllSubmissions());
+    }
+
     @GetMapping("/{competitionId}")
     public ResponseEntity<SchoolCompetition> getCompetitionDetails(@PathVariable String competitionId) {
         return ResponseEntity.ok(competitionService.getCompetitionById(competitionId));
@@ -63,6 +73,11 @@ public class SchoolCompetitionController {
             @RequestParam String schoolName,
             @RequestParam String rollNumber) {
         return ResponseEntity.ok(competitionService.getStudentSubmissions(schoolName, rollNumber));
+    }
+
+    @GetMapping("/{competitionId}/winners")
+    public ResponseEntity<List<SchoolCompetitionSubmission>> getWinners(@PathVariable String competitionId) {
+        return ResponseEntity.ok(competitionService.getCompetitionWinners(competitionId));
     }
 
     @Data
