@@ -7,6 +7,7 @@ import com.smartgaon.ai.smartgaon_api.schoolcompetition.repository.SchoolCompeti
 import com.smartgaon.ai.smartgaon_api.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import jakarta.persistence.PersistenceContext;
 
 import java.util.List;
@@ -77,6 +78,46 @@ public class SchoolCompetitionService {
         if (videoUrl != null && videoUrl.startsWith("data:")) {
             try {
                 String s3Url = s3Service.uploadBase64File(videoUrl, "school-competitions");
+                submission.setVideoUrl(s3Url);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to upload media file to S3: " + e.getMessage(), e);
+            }
+        }
+
+        // 4. Set Submission ID & Default Status
+        submission.setSubmissionId("SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        submission.setStatus("SUBMITTED");
+
+        return submissionRepository.save(submission);
+    }
+
+    public SchoolCompetitionSubmission submitEntryWithFile(SchoolCompetitionSubmission submission, String verificationCode, MultipartFile file) {
+        SchoolCompetition competition = getCompetitionById(submission.getCompetitionId());
+
+        // 1. Validate Verification Code (Single code for all schools)
+        String expectedCode = competition.getVerificationCode() != null ? competition.getVerificationCode().trim() : "";
+        String providedCode = verificationCode != null ? verificationCode.trim() : "";
+        if (!expectedCode.equalsIgnoreCase(providedCode)) {
+            throw new IllegalArgumentException("Invalid School Verification Code: '" + providedCode + "' does not match competition code.");
+        }
+
+        // 2. Enforce Duplicate Check (One entry per competition per group, class, school and student roll no)
+        boolean alreadySubmitted = submissionRepository.existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(
+                submission.getCompetitionId(),
+                submission.getGroupCategory(),
+                submission.getClassGrade(),
+                submission.getSchoolName(),
+                submission.getRollNumber()
+        );
+
+        if (alreadySubmitted) {
+            throw new IllegalStateException("An entry has already been submitted for this Student (Roll: " + submission.getRollNumber() + ", Class: " + submission.getClassGrade() + ", Group: " + submission.getGroupCategory() + ") under " + submission.getSchoolName() + "!");
+        }
+
+        // 3. Upload the raw file directly to S3 (no base64 involved)
+        if (file != null && !file.isEmpty()) {
+            try {
+                String s3Url = s3Service.uploadFile(file);
                 submission.setVideoUrl(s3Url);
             } catch (Exception e) {
                 throw new IllegalStateException("Failed to upload media file to S3: " + e.getMessage(), e);
