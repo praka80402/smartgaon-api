@@ -45,6 +45,32 @@ public class S3Service {
         }
     }
 
+    public String uploadFileNew(MultipartFile file) {
+    try {
+        String key = "forum_media/" +
+                UUID.randomUUID() + "-" + file.getOriginalFilename();
+
+        PutObjectRequest request = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .contentType(file.getContentType())
+                .build();
+
+        s3Client.putObject(
+                request,
+                RequestBody.fromInputStream(
+                        file.getInputStream(),
+                        file.getSize()
+                )
+        );
+
+        return getPublicUrl(key);
+
+    } catch (IOException e) {
+        throw new RuntimeException("S3 upload failed", e);
+    }
+}
+
 
 
     /** Delete file (Cloudinary destroy replacement) */

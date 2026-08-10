@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -51,29 +53,9 @@ public class SchoolCompetitionService {
     }
 
     public SchoolCompetitionSubmission submitEntry(SchoolCompetitionSubmission submission, String verificationCode) {
-        SchoolCompetition competition = getCompetitionById(submission.getCompetitionId());
+        validateSubmissionBeforeUpload(submission, verificationCode);
+        requireText(submission.getVideoUrl(), "videoUrl");
 
-        // 1. Validate Verification Code (Single code for all schools)
-        String expectedCode = competition.getVerificationCode() != null ? competition.getVerificationCode().trim() : "";
-        String providedCode = verificationCode != null ? verificationCode.trim() : "";
-        if (!expectedCode.equalsIgnoreCase(providedCode)) {
-            throw new IllegalArgumentException("Invalid School Verification Code: '" + providedCode + "' does not match competition code.");
-        }
-
-        // 2. Enforce Duplicate Check (One entry per competition per group, class, school and student roll no)
-        boolean alreadySubmitted = submissionRepository.existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(
-                submission.getCompetitionId(),
-                submission.getGroupCategory(),
-                submission.getClassGrade(),
-                submission.getSchoolName(),
-                submission.getRollNumber()
-        );
-
-        if (alreadySubmitted) {
-            throw new IllegalStateException("An entry has already been submitted for this Student (Roll: " + submission.getRollNumber() + ", Class: " + submission.getClassGrade() + ", Group: " + submission.getGroupCategory() + ") under " + submission.getSchoolName() + "!");
-        }
-
-        // 3. Upload base64 file content (videos, images, or documents) to S3 if applicable
         String videoUrl = submission.getVideoUrl();
         if (videoUrl != null && videoUrl.startsWith("data:")) {
             try {
@@ -84,50 +66,102 @@ public class SchoolCompetitionService {
             }
         }
 
-        // 4. Set Submission ID & Default Status
-        submission.setSubmissionId("SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        submission.setStatus("SUBMITTED");
-
-        return submissionRepository.save(submission);
+        return saveSubmission(submission);
     }
 
     public SchoolCompetitionSubmission submitEntryWithFile(SchoolCompetitionSubmission submission, String verificationCode, MultipartFile file) {
+        validateSubmissionBeforeUpload(submission, verificationCode);
+        validateMediaFile(file);
+
+        try {
+            String s3Url = s3Service.uploadFileNew(file);
+            submission.setVideoUrl(s3Url);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to upload media file to S3: " + e.getMessage(), e);
+        }
+
+        return saveSubmission(submission);
+    }
+
+    private void validateSubmissionBeforeUpload(SchoolCompetitionSubmission submission, String verificationCode) {
+        if (submission == null) {
+            throw new IllegalArgumentException("Submission data is required");
+        }
+
+        requireText(submission.getCompetitionId(), "competitionId");
+        requireText(submission.getStudentName(), "studentName");
+        requireText(submission.getSchoolName(), "schoolName");
+        requireText(submission.getClassGrade(), "classGrade");
+        requireText(submission.getRollNumber(), "rollNumber");
+        requireText(submission.getGroupCategory(), "groupCategory");
+
+        submission.setRollNumber(normalizeCommaSeparatedValue(submission.getRollNumber(), "rollNumber"));
+
         SchoolCompetition competition = getCompetitionById(submission.getCompetitionId());
+        if (!Boolean.TRUE.equals(competition.getIsLive()) || Boolean.TRUE.equals(competition.getIsDeleted())) {
+            throw new IllegalStateException("This competition is not accepting submissions");
+        }
 
-        // 1. Validate Verification Code (Single code for all schools)
-        String expectedCode = competition.getVerificationCode() != null ? competition.getVerificationCode().trim() : "";
-        String providedCode = verificationCode != null ? verificationCode.trim() : "";
+        String expectedCode = competition.getVerificationCode() == null ? "" : competition.getVerificationCode().trim();
+        String providedCode = verificationCode == null ? "" : verificationCode.trim();
         if (!expectedCode.equalsIgnoreCase(providedCode)) {
-            throw new IllegalArgumentException("Invalid School Verification Code: '" + providedCode + "' does not match competition code.");
+            throw new IllegalArgumentException("Invalid School Verification Code");
         }
 
-        // 2. Enforce Duplicate Check (One entry per competition per group, class, school and student roll no)
         boolean alreadySubmitted = submissionRepository.existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(
-                submission.getCompetitionId(),
-                submission.getGroupCategory(),
-                submission.getClassGrade(),
-                submission.getSchoolName(),
-                submission.getRollNumber()
-        );
-
-        if (alreadySubmitted) {
-            throw new IllegalStateException("An entry has already been submitted for this Student (Roll: " + submission.getRollNumber() + ", Class: " + submission.getClassGrade() + ", Group: " + submission.getGroupCategory() + ") under " + submission.getSchoolName() + "!");
+                submission.getCompetitionId(), submission.getGroupCategory(), submission.getClassGrade(),
+                submission.getSchoolName(), submission.getRollNumber());
+        if (!alreadySubmitted) {
+            alreadySubmitted = submissionRepository
+                    .findByCompetitionIdAndGroupCategoryAndSchoolName(
+                            submission.getCompetitionId(), submission.getGroupCategory(), submission.getSchoolName())
+                    .stream()
+                    .anyMatch(existing -> submission.getClassGrade().equals(existing.getClassGrade())
+                            && submission.getRollNumber().equals(
+                                    normalizeCommaSeparatedValue(existing.getRollNumber(), "rollNumber")));
         }
+        if (alreadySubmitted) {
+            throw new IllegalStateException("An entry has already been submitted for this student in this competition group");
+        }
+    }
 
-        // 3. Upload the raw file directly to S3 (no base64 involved)
-        if (file != null && !file.isEmpty()) {
-            try {
-                String s3Url = s3Service.uploadFile(file);
-                submission.setVideoUrl(s3Url);
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to upload media file to S3: " + e.getMessage(), e);
+    private void validateMediaFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("A media file is required");
+        }
+    }
+
+    private void requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required");
+        }
+    }
+
+    private String normalizeCommaSeparatedValue(String value, String fieldName) {
+        String[] tokens = Arrays.stream(value.split(",", -1))
+                .map(String::trim)
+                .map(token -> token.toUpperCase(Locale.ROOT))
+                .toArray(String[]::new);
+
+        for (String token : tokens) {
+            if (token.isEmpty()) {
+                throw new IllegalArgumentException(fieldName + " contains an empty value");
             }
         }
 
-        // 4. Set Submission ID & Default Status
+        Arrays.sort(tokens);
+        for (int index = 1; index < tokens.length; index++) {
+            if (tokens[index - 1].equals(tokens[index])) {
+                throw new IllegalArgumentException(fieldName + " cannot contain duplicate values");
+            }
+        }
+
+        return String.join(",", tokens);
+    }
+
+    private SchoolCompetitionSubmission saveSubmission(SchoolCompetitionSubmission submission) {
         submission.setSubmissionId("SUB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         submission.setStatus("SUBMITTED");
-
         return submissionRepository.save(submission);
     }
 
@@ -135,7 +169,12 @@ public class SchoolCompetitionService {
     private jakarta.persistence.EntityManager entityManager;
 
     public List<SchoolCompetitionSubmission> getStudentSubmissions(String schoolName, String rollNumber) {
-        return submissionRepository.findBySchoolNameAndRollNumber(schoolName, rollNumber);
+        requireText(schoolName, "schoolName");
+        String normalizedRollNumber = normalizeCommaSeparatedValue(rollNumber, "rollNumber");
+        return submissionRepository.findBySchoolName(schoolName).stream()
+                .filter(submission -> normalizedRollNumber.equals(
+                        normalizeCommaSeparatedValue(submission.getRollNumber(), "rollNumber")))
+                .toList();
     }
 
     public List<SchoolCompetitionSubmission> getCompetitionWinners(String competitionId) {

@@ -11,5 +11,7 @@ public interface SchoolCompetitionSubmissionRepository extends JpaRepository<Sch
     Optional<SchoolCompetitionSubmission> findBySubmissionId(String submissionId);
     List<SchoolCompetitionSubmission> findByCompetitionId(String competitionId);
     boolean existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(String competitionId, String groupCategory, String classGrade, String schoolName, String rollNumber);
+    List<SchoolCompetitionSubmission> findByCompetitionIdAndGroupCategoryAndSchoolName(String competitionId, String groupCategory, String schoolName);
+    List<SchoolCompetitionSubmission> findBySchoolName(String schoolName);
     List<SchoolCompetitionSubmission> findBySchoolNameAndRollNumber(String schoolName, String rollNumber);
 }
