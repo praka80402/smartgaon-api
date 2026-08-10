@@ -46,6 +46,7 @@ public class SchoolCompetitionController {
                     .entryTitle(request.getEntryTitle())
                     .entryDescription(request.getEntryDescription())
                     .videoUrl(request.getVideoUrl())
+                    .submittedBy(request.getSubmittedBy())
                     .build();
 
             SchoolCompetitionSubmission saved = competitionService.submitEntry(submission, request.getVerificationCode());
@@ -78,5 +79,6 @@ public class SchoolCompetitionController {
         private String submissionType;
         private String videoUrl;
         private String verificationCode;
+        private String submittedBy;
     }
 }
