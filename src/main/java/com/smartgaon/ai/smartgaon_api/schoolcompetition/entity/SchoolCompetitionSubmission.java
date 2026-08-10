@@ -56,6 +56,12 @@ public class SchoolCompetitionSubmission {
     @Column(name = "submitted_by", length = 150)
     private String submittedBy;
 
+    @Column(name = "winner_rank")
+    private Integer winnerRank;
+
+    @Column(name = "total_score")
+    private Integer totalScore;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
