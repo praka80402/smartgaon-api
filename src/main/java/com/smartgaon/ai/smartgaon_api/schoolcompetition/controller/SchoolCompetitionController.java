@@ -5,8 +5,10 @@ import com.smartgaon.ai.smartgaon_api.schoolcompetition.entity.SchoolCompetition
 import com.smartgaon.ai.smartgaon_api.schoolcompetition.service.SchoolCompetitionService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -60,6 +62,32 @@ public class SchoolCompetitionController {
                     .build();
 
             SchoolCompetitionSubmission saved = competitionService.submitEntry(submission, request.getVerificationCode());
+            return ResponseEntity.ok(saved);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to submit entry: " + e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/submit-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> submitCompetitionEntryWithFile(
+            @RequestPart("data") SubmissionRequest request,
+            @RequestPart("file") MultipartFile file) {
+        try {
+            SchoolCompetitionSubmission submission = SchoolCompetitionSubmission.builder()
+                    .competitionId(request.getCompetitionId())
+                    .studentName(request.getStudentName())
+                    .schoolName(request.getSchoolName())
+                    .classGrade(request.getClassGrade())
+                    .rollNumber(request.getRollNumber())
+                    .groupCategory(request.getGroupCategory())
+                    .entryTitle(request.getEntryTitle())
+                    .entryDescription(request.getEntryDescription())
+                    .submittedBy(request.getSubmittedBy())
+                    .build();
+
+            SchoolCompetitionSubmission saved = competitionService.submitEntryWithFile(submission, request.getVerificationCode(), file);
             return ResponseEntity.ok(saved);
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
