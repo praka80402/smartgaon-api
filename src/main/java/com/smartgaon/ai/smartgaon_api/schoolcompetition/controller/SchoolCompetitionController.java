@@ -1,7 +1,9 @@
 package com.smartgaon.ai.smartgaon_api.schoolcompetition.controller;
 
+import com.smartgaon.ai.smartgaon_api.schoolcompetition.entity.PrizeDistributionVideo;
 import com.smartgaon.ai.smartgaon_api.schoolcompetition.entity.SchoolCompetition;
 import com.smartgaon.ai.smartgaon_api.schoolcompetition.entity.SchoolCompetitionSubmission;
+import com.smartgaon.ai.smartgaon_api.schoolcompetition.repository.PrizeDistributionVideoRepository;
 import com.smartgaon.ai.smartgaon_api.schoolcompetition.service.SchoolCompetitionService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.List;
 public class SchoolCompetitionController {
 
     private final SchoolCompetitionService competitionService;
+    private final PrizeDistributionVideoRepository prizeVideoRepository;
 
     @GetMapping("/active")
     public ResponseEntity<List<SchoolCompetition>> getActiveCompetitions() {
@@ -112,6 +115,15 @@ public class SchoolCompetitionController {
     @GetMapping("/{competitionId}/winners")
     public ResponseEntity<List<SchoolCompetitionSubmission>> getWinners(@PathVariable String competitionId) {
         return ResponseEntity.ok(competitionService.getCompetitionWinners(competitionId));
+    }
+
+    @GetMapping("/prize-videos")
+    public ResponseEntity<List<PrizeDistributionVideo>> getPrizeVideos(
+            @RequestParam(value = "category", required = false) String category) {
+        if (category != null && !category.isBlank()) {
+            return ResponseEntity.ok(prizeVideoRepository.findByCategoryIgnoreCase(category.trim()));
+        }
+        return ResponseEntity.ok(prizeVideoRepository.findAll());
     }
 
     @Data
