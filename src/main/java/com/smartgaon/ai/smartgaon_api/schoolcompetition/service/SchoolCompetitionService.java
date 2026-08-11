@@ -29,6 +29,15 @@ public class SchoolCompetitionService {
                 .toList();
     }
 
+    public List<SchoolCompetition> getAllCompetitionsForDisplay() {
+        // Returns both LIVE and COMPLETED (non-deleted) competitions
+        // Used by winner tab to show winners of completed competitions too
+        return competitionRepository.findAll().stream()
+                .filter(c -> !Boolean.TRUE.equals(c.getIsDeleted()))
+                .filter(c -> "LIVE".equalsIgnoreCase(c.getStatus()) || "COMPLETED".equalsIgnoreCase(c.getStatus()))
+                .toList();
+    }
+
     public List<SchoolCompetition> debugAllCompetitions() {
         return competitionRepository.findAll();
     }

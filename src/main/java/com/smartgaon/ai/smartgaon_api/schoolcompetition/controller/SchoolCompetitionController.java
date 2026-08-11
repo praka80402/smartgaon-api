@@ -25,6 +25,12 @@ public class SchoolCompetitionController {
         return ResponseEntity.ok(competitionService.getActiveCompetitions());
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<SchoolCompetition>> getAllCompetitions() {
+        // Returns LIVE + COMPLETED competitions for the winners display tab
+        return ResponseEntity.ok(competitionService.getAllCompetitionsForDisplay());
+    }
+
     @GetMapping("/debug-competitions")
     public ResponseEntity<List<SchoolCompetition>> debugCompetitions() {
         return ResponseEntity.ok(competitionService.debugAllCompetitions());
