@@ -21,73 +21,33 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/quick-services")
 public class QuickServiceController {
-
     private final QuickServiceService service;
-
-    public QuickServiceController(QuickServiceService service) {
-        this.service = service;
-    }
+    public QuickServiceController(QuickServiceService service) { this.service = service; }
 
     @GetMapping("/active")
-    public List<QuickService> getActive() {
-        return service.getActiveServices();
-    }
+    public List<QuickService> getActive() { return service.getActiveServices(); }
+
+    // ✅ MOB ka method - same service se
+    @GetMapping("/mob/active")
+    public List<QuickServiceMobile> getActiveMob() { return service.getActiveMobServices(); }
 }
 
 @RestController
 @RequestMapping("/api/admin/quick-services")
 @PreAuthorize("hasRole('ADMIN')")
 class AdminQuickServiceController {
-
     private final QuickServiceService service;
+    AdminQuickServiceController(QuickServiceService service) { this.service = service; }
 
-    AdminQuickServiceController(QuickServiceService service) {
-        this.service = service;
-    }
+    // ===== WEB =====
+    @GetMapping public List<QuickService> getAll() { return service.getAllServices(); }
+    @PostMapping public ResponseEntity<QuickService> create(@Valid @RequestBody QuickServiceRequest req) { return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req)); }
+    @PutMapping("/{id}") public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody QuickServiceRequest req) { try { return ResponseEntity.ok(service.update(id, req)); } catch (NoSuchElementException e) { return ResponseEntity.notFound().build(); } }
+    @DeleteMapping("/{id}") public ResponseEntity<?> delete(@PathVariable Long id) { try { service.delete(id); return ResponseEntity.noContent().build(); } catch (NoSuchElementException e) { return ResponseEntity.notFound().build(); } }
+    @PatchMapping("/{id}/toggle-active") public ResponseEntity<?> toggleActive(@PathVariable Long id) { try { return ResponseEntity.ok(service.toggleActive(id)); } catch (NoSuchElementException e) { return ResponseEntity.notFound().build(); } }
+    @PutMapping("/reorder") public ResponseEntity<?> reorder(@RequestBody ReorderRequest req) { service.reorder(req); return ResponseEntity.ok().build(); }
 
-    @GetMapping
-    public List<QuickService> getAll() {
-        return service.getAllServices();
-    }
-
-    @PostMapping
-    public ResponseEntity<QuickService> create(@Valid @RequestBody QuickServiceRequest req) {
-        QuickService created = service.create(req);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody QuickServiceRequest req) {
-        try {
-            return ResponseEntity.ok(service.update(id, req));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        try {
-            service.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    @PatchMapping("/{id}/toggle-active")
-    public ResponseEntity<?> toggleActive(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(service.toggleActive(id));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    // Body: { "items": [ { "id": 3, "displayOrder": 0 }, { "id": 1, "displayOrder": 1 }, ... ] }
-    @PutMapping("/reorder")
-    public ResponseEntity<?> reorder(@RequestBody ReorderRequest req) {
-        service.reorder(req);
-        return ResponseEntity.ok().build();
-    }
+    // ===== MOB ke METHODS - neeche, bina class ke =====
+    @GetMapping("/mob") public List<QuickServiceMobile> getAllMob() { return service.getAllMobServices(); }
+   
 }
