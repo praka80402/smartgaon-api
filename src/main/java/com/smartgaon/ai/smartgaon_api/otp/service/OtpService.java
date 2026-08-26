@@ -156,7 +156,7 @@ public class OtpService {
         return response;
     }
 
-    private void sendOtpViaMsg91(String normalizedMobile, String otp) {
+    public void sendOtpViaMsg91(String normalizedMobile, String otp) {
         validateGatewayConfig();
 
         String url = UriComponentsBuilder
