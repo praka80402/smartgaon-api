@@ -39,12 +39,21 @@ public class PhoneUpdateService {
             )
         );
         System.out.println("OTP " + otp + " generated for " + phoneNumber);
-
         return otp;
     }
 
-    public OtpStatus verifyOtp(String phoneNumber, String otp) {
+    public void saveDevOtp(String phoneNumber, String otp) {
+        otpStorage.put(
+            phoneNumber,
+            new OtpData(
+                otp,
+                System.currentTimeMillis() + 10 * 60 * 1000 
+            )
+        );
+        System.out.println("DEV OTP " + otp + " saved for " + phoneNumber);
+    }
 
+    public OtpStatus verifyOtp(String phoneNumber, String otp) {
         OtpData data = otpStorage.get(phoneNumber);
 
         if (data == null) {
@@ -52,9 +61,7 @@ public class PhoneUpdateService {
         }
 
         if (System.currentTimeMillis() > data.expiryTime) {
-
             otpStorage.remove(phoneNumber);
-
             return OtpStatus.EXPIRED;
         }
 
@@ -63,7 +70,6 @@ public class PhoneUpdateService {
         }
 
         otpStorage.remove(phoneNumber);
-
         return OtpStatus.VALID;
     }
 }
