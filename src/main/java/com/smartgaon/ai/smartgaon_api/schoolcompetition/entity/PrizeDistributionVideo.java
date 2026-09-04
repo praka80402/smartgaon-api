@@ -37,6 +37,40 @@ public class PrizeDistributionVideo {
     @Column(name = "video_url", columnDefinition = "TEXT", nullable = false)
     private String videoUrl;
 
+    @Column(name = "video_year")
+    private String year;
+
+    @Column(name = "video_month")
+    private String month;
+
+    @Column(name = "competition_type")
+    private String competitionType;
+
+    @Column(name = "group_category")
+    private String groupCategory;
+
+    @Column(name = "is_past_competition")
+    @Builder.Default
+    private Boolean isPastCompetition = false;
+
+    @Column(name = "winner_rank")
+    private Integer winnerRank;
+
+    @Column(name = "prize_amount")
+    private String prizeAmount;
+
+    @Column(name = "student_name")
+    private String studentName;
+
+    @Column(name = "school_name")
+    private String schoolName;
+
+    @Column(name = "student_class")
+    private String studentClass;
+
+    @Column(name = "roll_number")
+    private String rollNumber;
+
     @Column(name = "created_by")
     private String createdBy;
 
