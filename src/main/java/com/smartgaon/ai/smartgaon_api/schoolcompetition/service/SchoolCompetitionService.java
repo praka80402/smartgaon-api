@@ -188,83 +188,68 @@ public class SchoolCompetitionService {
 
     public List<SchoolCompetitionSubmission> getCompetitionWinners(String competitionId) {
         SchoolCompetition comp = getCompetitionById(competitionId);
-        
-        if ("MANUAL".equalsIgnoreCase(comp.getWinnerAnnouncementMode())) {
-            return submissionRepository.findByCompetitionId(competitionId).stream()
-                    .filter(s -> s.getWinnerRank() != null && s.getWinnerRank() > 0)
-                    .sorted(java.util.Comparator.comparing(SchoolCompetitionSubmission::getWinnerRank))
-                    .toList();
-        } else {
-            // AUTOMATIC mode:
-            // 1. Get total judges count in the system
-            long totalJudges = 3; // default fallback
-            try {
-                Number countNum = (Number) entityManager.createNativeQuery(
-                        "SELECT COUNT(*) FROM admins WHERE role = 'JUDGE'"
-                ).getSingleResult();
-                if (countNum != null) {
-                    totalJudges = countNum.longValue();
-                }
-            } catch (Exception e) {
-                // Ignore and use default fallback 3
-            }
-            if (totalJudges <= 0) {
-                totalJudges = 3;
-            }
 
-            // 2. Fetch all active submissions for this competition
-            List<SchoolCompetitionSubmission> subs = submissionRepository.findByCompetitionId(competitionId).stream()
-                    .filter(s -> !"REJECTED".equalsIgnoreCase(s.getStatus()))
-                    .toList();
+        List<SchoolCompetitionSubmission> subs = submissionRepository.findByCompetitionId(competitionId).stream()
+                .filter(s -> !"REJECTED".equalsIgnoreCase(s.getStatus()))
+                .toList();
 
-            // Group by groupCategory
+        java.util.Map<String, SchoolCompetitionSubmission> winnersMap = new java.util.LinkedHashMap<>();
+
+        // 1. First include any submission with manual rank or WINNER status
+        for (SchoolCompetitionSubmission s : subs) {
+            if (s.getWinnerRank() != null && s.getWinnerRank() > 0) {
+                winnersMap.put(s.getSubmissionId(), s);
+            } else if ("WINNER".equalsIgnoreCase(s.getStatus()) || "WINNER_ANNOUNCED".equalsIgnoreCase(s.getStatus())) {
+                s.setWinnerRank(1);
+                winnersMap.put(s.getSubmissionId(), s);
+            }
+        }
+
+        // 2. In AUTOMATIC mode (or if not MANUAL), also determine winners by total score per group
+        boolean isAutomatic = comp == null || !"MANUAL".equalsIgnoreCase(comp.getWinnerAnnouncementMode());
+        if (isAutomatic) {
             java.util.Map<String, List<SchoolCompetitionSubmission>> grouped = subs.stream()
-                    .collect(java.util.stream.Collectors.groupingBy(SchoolCompetitionSubmission::getGroupCategory));
-
-            List<SchoolCompetitionSubmission> winners = new java.util.ArrayList<>();
+                    .collect(java.util.stream.Collectors.groupingBy(s -> s.getGroupCategory() != null ? s.getGroupCategory() : "General"));
 
             for (java.util.Map.Entry<String, List<SchoolCompetitionSubmission>> entry : grouped.entrySet()) {
                 List<SchoolCompetitionSubmission> groupSubs = entry.getValue();
-                
-                // For each group, check if ALL entries in that group have been evaluated by ALL judges
-                boolean allEvaluated = true;
+
+                // Check ranks already used by manual winners in this group
+                java.util.Set<Integer> usedRanks = new java.util.HashSet<>();
                 for (SchoolCompetitionSubmission s : groupSubs) {
-                    long evalsCount = 0;
-                    try {
-                        Number countNum = (Number) entityManager.createNativeQuery(
-                                "SELECT COUNT(*) FROM judge_evaluations WHERE submission_id = :subId"
-                        ).setParameter("subId", s.getSubmissionId()).getSingleResult();
-                        if (countNum != null) {
-                            evalsCount = countNum.longValue();
-                        }
-                    } catch (Exception e) {
-                        // ignore
+                    if (winnersMap.containsKey(s.getSubmissionId()) && winnersMap.get(s.getSubmissionId()).getWinnerRank() != null) {
+                        usedRanks.add(winnersMap.get(s.getSubmissionId()).getWinnerRank());
                     }
-                    if (evalsCount < totalJudges) {
-                        allEvaluated = false;
+                }
+
+                // Sort non-rejected entries with scores descending
+                List<SchoolCompetitionSubmission> sorted = groupSubs.stream()
+                        .filter(s -> s.getTotalScore() != null && s.getTotalScore() > 0)
+                        .sorted((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()))
+                        .toList();
+
+                int currentRank = 1;
+                for (SchoolCompetitionSubmission s : sorted) {
+                    if (winnersMap.containsKey(s.getSubmissionId())) {
+                        continue;
+                    }
+                    while (usedRanks.contains(currentRank)) {
+                        currentRank++;
+                    }
+                    if (currentRank > 3) {
                         break;
                     }
-                }
-
-                if (allEvaluated) {
-                    // Filter those with valid scores, sort descending, and take top 3
-                    List<SchoolCompetitionSubmission> sorted = groupSubs.stream()
-                            .filter(s -> s.getTotalScore() != null)
-                            .sorted((a, b) -> b.getTotalScore() - a.getTotalScore())
-                            .toList();
-
-                    for (int i = 0; i < Math.min(sorted.size(), 3); i++) {
-                        SchoolCompetitionSubmission w = sorted.get(i);
-                        w.setWinnerRank(i + 1); // Set rank (1, 2, or 3)
-                        winners.add(w);
-                    }
+                    s.setWinnerRank(currentRank);
+                    usedRanks.add(currentRank);
+                    winnersMap.put(s.getSubmissionId(), s);
+                    currentRank++;
                 }
             }
-
-            return winners.stream()
-                    .sorted(java.util.Comparator.comparing(SchoolCompetitionSubmission::getGroupCategory)
-                            .thenComparing(SchoolCompetitionSubmission::getWinnerRank))
-                    .toList();
         }
+
+        return winnersMap.values().stream()
+                .sorted(java.util.Comparator.comparing((SchoolCompetitionSubmission s) -> s.getGroupCategory() != null ? s.getGroupCategory() : "")
+                        .thenComparing(s -> s.getWinnerRank() != null ? s.getWinnerRank() : 999))
+                .toList();
     }
 }
