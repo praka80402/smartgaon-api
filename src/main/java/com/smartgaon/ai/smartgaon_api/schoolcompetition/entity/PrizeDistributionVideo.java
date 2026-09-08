@@ -71,6 +71,14 @@ public class PrizeDistributionVideo {
     @Column(name = "roll_number")
     private String rollNumber;
 
+    @Column(name = "is_consolation")
+    @Builder.Default
+    private Boolean isConsolation = false;
+
+    @Column(name = "show_on_web")
+    @Builder.Default
+    private Boolean showOnWeb = true;
+
     @Column(name = "created_by")
     private String createdBy;
 

@@ -44,6 +44,16 @@ public class SchoolCompetitionController {
         return ResponseEntity.ok(competitionService.debugAllSubmissions());
     }
 
+    @GetMapping("/ceremony-videos")
+    public ResponseEntity<List<PrizeDistributionVideo>> getCeremonyVideos() {
+        return ResponseEntity.ok(prizeVideoRepository.findAll().stream()
+                .filter(v -> v.getVideoUrl() != null && !v.getVideoUrl().isBlank())
+                .filter(v -> !Boolean.TRUE.equals(v.getIsPastCompetition()))
+                .filter(v -> v.getWinnerRank() == null || v.getWinnerRank() <= 0)
+                .filter(v -> v.getStudentName() == null || v.getStudentName().isBlank())
+                .toList());
+    }
+
     @GetMapping("/{competitionId}")
     public ResponseEntity<SchoolCompetition> getCompetitionDetails(@PathVariable String competitionId) {
         return ResponseEntity.ok(competitionService.getCompetitionById(competitionId));
