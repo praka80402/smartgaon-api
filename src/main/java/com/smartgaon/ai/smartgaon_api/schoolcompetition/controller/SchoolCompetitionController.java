@@ -136,10 +136,7 @@ public class SchoolCompetitionController {
         return ResponseEntity.ok(prizeVideoRepository.findAll());
     }
 
-    @GetMapping("/ceremony-videos")
-    public ResponseEntity<List<PrizeDistributionVideo>> getCeremonyVideos() {
-        return ResponseEntity.ok(prizeVideoRepository.findByIsPastCompetitionFalseOrIsPastCompetitionIsNull());
-    }
+
 
     @Data
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
