@@ -8,4 +8,6 @@ import java.util.List;
 public interface PrizeDistributionVideoRepository extends JpaRepository<PrizeDistributionVideo, Long> {
 
     List<PrizeDistributionVideo> findByCategoryIgnoreCase(String category);
+
+    List<PrizeDistributionVideo> findByIsPastCompetitionFalseOrIsPastCompetitionIsNull();
 }
