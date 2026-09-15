@@ -1,14 +1,20 @@
 package com.smartgaon.ai.smartgaon_api.auth.service;
 
+import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
+import com.smartgaon.ai.smartgaon_api.JwtUtil.UserType;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.service.EmailService;
-
+import com.smartgaon.ai.smartgaon_api.auth.dto.TokenResponse;
 import lombok.RequiredArgsConstructor;
-
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.smartgaon.ai.smartgaon_api.config.RedisAuthTokenService;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -20,9 +26,13 @@ public class AuthService {
 
     private final UserRepository repo;
     private final EmailService emailService;
-
+  private final JwtUtil jwt;
+    private final RedisAuthTokenService redisAuthTokenService;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
+     private static final long WEB_TOKEN_EXPIRY_DAYS = 1; // WEB = 1 din
+    private static final long MOBILE_TOKEN_EXPIRY_DAYS = 2; // APP/MOBILE = 2 din
+    private static final long REFRESH_TOKEN_EXPIRY_DAYS = 30;
+ 
 
     // ======================================================
     // SIGNUP
@@ -331,4 +341,230 @@ public class AuthService {
         return repo.findAll();
     }
 
+
+
+
+    // ============================================================
+    // GENERATE ACCESS + REFRESH TOKEN
+    // ============================================================
+
+    // public TokenResponse generateToken(String phone, String email, String userType) {
+    //     if (userType == null || userType.isBlank()) {
+    //         userType = "WEB";
+    //     }
+    //     UserType type;
+    //     try {
+    //         type = UserType.valueOf(userType.trim().toUpperCase());
+    //     } catch (IllegalArgumentException e) {
+    //         throw new IllegalArgumentException("Invalid userType. Allowed values: WEB, MOBILE");
+    //     }
+
+    //     if ((phone == null || phone.isBlank()) && (email == null || email.isBlank())) {
+    //         throw new IllegalArgumentException("Phone or email is required");
+    //     }
+
+    //     User user;
+
+    //     if (phone != null && !phone.isBlank()) {
+    //         user = repo.findByPhone(phone.trim()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+    //     } else {
+
+    //         user = repo.findByEmail(email.trim()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    //     }
+
+    //     if (user.getIsDeleted() == null || user.getIsDeleted()) {
+    //         throw new IllegalStateException("User account is Deleted");
+    //     }
+    //     long accessTokenExpiryDays = type == UserType.MOBILE ? MOBILE_TOKEN_EXPIRY_DAYS : WEB_TOKEN_EXPIRY_DAYS;
+    //     long accessTokenExpirySeconds = accessTokenExpiryDays * 24L * 60L * 60L;
+    //     long refreshTokenExpirySeconds = REFRESH_TOKEN_EXPIRY_DAYS * 24L * 60L * 60L;
+
+    //     String accessToken = jwt.generateAccessToken(user, type.name(), accessTokenExpirySeconds);
+    //     String refreshToken = jwt.generateRefreshToken(user, type.name(), refreshTokenExpirySeconds);
+    //     return new TokenResponse(accessToken, refreshToken, "Bearer", accessTokenExpirySeconds, refreshTokenExpirySeconds);
+    // }
+    // public record TokenResponse(
+    //         String accessToken,
+    //         String refreshToken,
+    //         String tokenType,
+    //         long expiresIn,
+    //         long refreshExpiresIn
+    // ) {
+    // }
+    //  public TokenResponse refreshAccessToken(String refreshToken) {
+    //     try {
+    //         Claims claims = jwt.extractAllClaims(refreshToken);
+
+    //         if (!"REFRESH".equals(claims.get("tokenType", String.class))) {
+    //             throw new IllegalArgumentException("This is not a refresh token");
+    //         }
+
+    //         String userId = claims.getSubject();
+    //         String userTypeStr = claims.get("userType", String.class);
+    //         UserType type = UserType.valueOf(userTypeStr);
+    //         User user = repo.findById(Long.parseLong(userId))
+    //                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    //         if (Boolean.TRUE.equals(user.getIsDeleted())) throw new IllegalStateException("User account is deleted");
+    //         if (Boolean.FALSE.equals(user.getAccountEnabled())) throw new IllegalStateException("Account disabled");
+    //         long accessSec = (type == UserType.MOBILE ? MOBILE_TOKEN_EXPIRY_DAYS : WEB_TOKEN_EXPIRY_DAYS) * 86400L;
+    //         long refreshSec = REFRESH_TOKEN_EXPIRY_DAYS * 86400L;
+    //         String newAccessToken = jwt.generateAccessToken(user, type.name(), accessSec);
+    //         String newRefreshToken = jwt.generateRefreshToken(user, type.name(), refreshSec);
+    //         return new TokenResponse(newAccessToken, newRefreshToken, "Bearer", accessSec, refreshSec);
+    //     } catch (ExpiredJwtException e) {
+    //         throw new IllegalStateException("Refresh token expired, please login again");
+    //     } catch (Exception e) {
+    //         throw new IllegalArgumentException("Invalid refresh token: " + e.getMessage());
+    //     }
+    // }
+
+    // public void logout(String refreshToken) {
+    //     try {
+    //         Claims claims = jwt.extractAllClaims(refreshToken);
+    //         if (!"REFRESH".equals(claims.get("tokenType", String.class))) {
+    //             throw new IllegalArgumentException("This is not a refresh token");
+    //         }   
+    //     } catch (ExpiredJwtException e) {
+    //         return;
+    //     } catch (Exception e) {
+    //         throw new IllegalArgumentException("Invalid refresh token");
+    //     }
+    // }
+
+   public TokenResponse generateToken(String phone, String email, String userType) {
+        if (userType == null || userType.isBlank()) {
+            userType = "WEB";
+        }
+        UserType type;
+        try {
+            type = UserType.valueOf(userType.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid userType. Allowed values: WEB, MOBILE");
+        }
+        if ((phone == null || phone.isBlank()) && (email == null || email.isBlank())) {
+            throw new IllegalArgumentException("Phone or email is required");
+        }
+
+        User user;
+        String loginIdentifier; // jisse login kiya usi se key banegi
+
+        if (phone != null && !phone.isBlank()) {
+            user = repo.findByPhone(phone.trim()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            loginIdentifier = phone.trim();
+        } else {
+            user = repo.findByEmail(email.trim()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            loginIdentifier = email.trim().toLowerCase();
+        }
+
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            throw new IllegalStateException("User account is Deleted");
+        }
+
+        long accessTokenExpiryDays = type == UserType.MOBILE ? MOBILE_TOKEN_EXPIRY_DAYS : WEB_TOKEN_EXPIRY_DAYS;
+        long accessTokenExpirySeconds = accessTokenExpiryDays * 24L * 60L * 60L;
+        long refreshTokenExpirySeconds = REFRESH_TOKEN_EXPIRY_DAYS * 24L * 60L * 60L;
+
+        String accessToken = jwt.generateAccessToken(user, type.name(), accessTokenExpirySeconds);
+        String refreshToken = jwt.generateRefreshToken(user, type.name(), refreshTokenExpirySeconds);
+        
+        // Redis me save - ab sahi identifier se
+        redisAuthTokenService.saveTokens(type.name(), loginIdentifier, accessToken, refreshToken, refreshTokenExpirySeconds);
+
+        return new TokenResponse(accessToken, refreshToken, "Bearer", accessTokenExpirySeconds, refreshTokenExpirySeconds);
+    }
+
+    public record TokenResponse(
+            String accessToken,
+            String refreshToken,
+            String tokenType,
+            long expiresIn,
+            long refreshExpiresIn
+    ) {}
+
+     public TokenResponse refreshAccessToken(String refreshToken) {
+        try {
+            Claims claims = jwt.extractAllClaims(refreshToken);
+            if (!"REFRESH".equals(claims.get("tokenType", String.class))) {
+                throw new IllegalArgumentException("This is not a refresh token");
+            }
+            String userId = claims.getSubject();
+            String userTypeStr = claims.get("userType", String.class);
+            UserType type = UserType.valueOf(userTypeStr);
+            User user = repo.findById(Long.parseLong(userId))
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+            if (Boolean.TRUE.equals(user.getIsDeleted())) throw new IllegalStateException("User account is deleted");
+            if (Boolean.FALSE.equals(user.getAccountEnabled())) throw new IllegalStateException("Account disabled");
+
+            // Check karo phone ya email dono me se koi ek key exist karti hai ya nahi
+            boolean exists = false;
+            String actualIdentifier = null;
+            if (user.getPhone() != null && redisAuthTokenService.isTokenExists(type.name(), user.getPhone())) {
+                exists = true;
+                actualIdentifier = user.getPhone();
+            } else if (user.getEmail() != null && redisAuthTokenService.isTokenExists(type.name(), user.getEmail())) {
+                exists = true;
+                actualIdentifier = user.getEmail().toLowerCase();
+            }
+            if (!exists) throw new IllegalStateException("Session expired or logged out, please login again");
+
+            long accessSec = (type == UserType.MOBILE ? MOBILE_TOKEN_EXPIRY_DAYS : WEB_TOKEN_EXPIRY_DAYS) * 86400L;
+            long refreshSec = REFRESH_TOKEN_EXPIRY_DAYS * 86400L;
+            String newAccessToken = jwt.generateAccessToken(user, type.name(), accessSec);
+            String newRefreshToken = jwt.generateRefreshToken(user, type.name(), refreshSec);
+
+            redisAuthTokenService.saveTokens(type.name(), actualIdentifier, newAccessToken, newRefreshToken, refreshSec);
+
+            return new TokenResponse(newAccessToken, newRefreshToken, "Bearer", accessSec, refreshSec);
+        } catch (ExpiredJwtException e) {
+            throw new IllegalStateException("Refresh token expired, please login again");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid refresh token: " + e.getMessage());
+        }
+    }
+
+public boolean secureLogout(String accessToken, Map<String, String> body) {
+    try {
+        Claims claims = jwt.extractAllClaims(accessToken);
+        String tokenUserId = claims.getSubject();
+        String userType = claims.get("userType", String.class);
+
+        User user = repo.findById(Long.parseLong(tokenUserId))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String reqUserId = body.get("userId");
+        String reqEmail = body.get("email");
+        String reqPhone = body.get("phone");
+
+        // 1. CHECK: Body ka userId aur Token ka userId same hona chahiye
+        if (reqUserId != null && !tokenUserId.equals(reqUserId.trim())) {
+            throw new IllegalArgumentException("Token and userId mismatch");
+        }
+
+        // 2. CHECK: Jo email/phone body me bheja hai wo isi user ka hai ya nahi
+        if (reqEmail != null && !reqEmail.isBlank()) {
+            if (user.getEmail() == null || !user.getEmail().equalsIgnoreCase(reqEmail.trim())) {
+                throw new IllegalArgumentException("Email does not belong to this token user");
+            }
+        }
+        if (reqPhone != null && !reqPhone.isBlank()) {
+            if (user.getPhone() == null || !user.getPhone().equals(reqPhone.trim())) {
+                throw new IllegalArgumentException("Phone does not belong to this token user");
+            }
+        }
+
+        // 3. DELETE: Token usi user ka hai ye confirm hai, ab delete karo
+        boolean del1 = false, del2 = false;
+        if (user.getPhone() != null) del1 = redisAuthTokenService.deleteToken(userType, user.getPhone());
+        if (user.getEmail() != null) del2 = redisAuthTokenService.deleteToken(userType, user.getEmail().toLowerCase());
+
+        System.out.println("Secure Logout: userId=" + tokenUserId + " phone=" + del1 + " email=" + del2);
+        return del1 || del2;
+
+    } catch (ExpiredJwtException e) {
+        return true;
+    } catch (Exception e) {
+        throw new IllegalArgumentException(e.getMessage());
+    }
+}
 }

@@ -1,16 +1,18 @@
 package com.smartgaon.ai.smartgaon_api.JwtUtil;
 
+import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
+import com.smartgaon.ai.smartgaon_api.config.RedisAuthTokenService;
+import com.smartgaon.ai.smartgaon_api.model.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -19,45 +21,70 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserRepository userRepo;
+    private final RedisAuthTokenService redisAuthTokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
-        
+        // auth wali APIs skip
+        if (request.getServletPath().startsWith("/api/auth/")) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-        // Always clear context first
-        SecurityContextHolder.clearContext();
+        String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-
             try {
-                String email = jwtUtil.extractEmail(token);
-                String role = jwtUtil.extractRole(token);
+                if (jwtUtil.validateToken(token)) {
+                    String tokenType = jwtUtil.extractTokenType(token);
+                    if (!"REFRESH".equals(tokenType)) {
+                        String userId = jwtUtil.extractUserId(token);
+                        String userType = jwtUtil.extractUserType(token);
 
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(role);
-                
-                // 🔍 DEBUG LOGS
-                System.out.println("===== JWT DEBUG =====");
-                System.out.println("EMAIL = " + email);
-                System.out.println("ROLE = " + role);
-                System.out.println("AUTHORITY ADDED = " + authority.getAuthority());
-                
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(email, null, List.of(authority));
+                        User user = userRepo.findById(Long.parseLong(userId)).orElse(null);
+                        if (user == null) {
+                            response.setStatus(403);
+                            response.getWriter().write("{\"error\":\"User not found\"}");
+                            return;
+                        }
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                        // ===== LOGOUT CHECK - YE ADD KIYA =====
+                        boolean isValid = false;
+                        if (user.getPhone() != null) {
+                            String stored = redisAuthTokenService.getAccessToken(userType, user.getPhone());
+                            if (token.equals(stored)) isValid = true;
+                        }
+                        if (!isValid && user.getEmail() != null) {
+                            String stored = redisAuthTokenService.getAccessToken(userType, user.getEmail().toLowerCase());
+                            if (token.equals(stored)) isValid = true;
+                        }
 
+                        if (!isValid) {
+                            System.out.println("BLOCKED - Logged out token");
+                            response.setStatus(403);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Session expired or logged out\"}");
+                            return;
+                        }
+
+                        String role = "ROLE_" + userType;
+                        System.out.println("AUTH SET -> userId=" + userId + " role=" + role);
+
+                        var auth = new UsernamePasswordAuthenticationToken(
+                                userId, null, List.of(new SimpleGrantedAuthority(role))
+                        );
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
+                }
             } catch (Exception e) {
-                // ignore invalid tokens
+                System.out.println("JWT ERROR: " + e.getMessage());
+                SecurityContextHolder.clearContext();
             }
         }
-
         chain.doFilter(request, response);
     }
-    
-  
-
 }

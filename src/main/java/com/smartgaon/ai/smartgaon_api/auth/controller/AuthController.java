@@ -8,11 +8,13 @@ import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
 import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
-
+import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
+import com.smartgaon.ai.smartgaon_api.auth.service.AuthService.TokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.*;
 
@@ -365,5 +367,51 @@ public class AuthController {
          );
      }
  }
+    @PostMapping("/generate-jwt-token")
+    public ResponseEntity<?> generateToken(@RequestParam(required = false) String phone, @RequestParam(required = false) String email, @RequestParam(defaultValue = "web") String userType) {
+        return ResponseEntity.ok(auth.generateToken(phone, email, userType));
+    }
+    @PostMapping("/refresh")
+public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
+    try {
+        String refreshToken = req.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+        }
 
+        AuthService.TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
+
+        return ResponseEntity.ok(Map.of(
+            "accessToken", newTokens.accessToken(),
+            "refreshToken", newTokens.refreshToken(),
+            "tokenType", "Bearer",
+            "expiresIn", newTokens.expiresIn()
+        ));
+
+    } catch (IllegalStateException e) {
+        // Refresh token expire ho gaya -> user ko logout karna padega
+        return ResponseEntity.status(401).body(Map.of("error", e.getMessage(), "navigate", "login"));
+    } catch (Exception e) {
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid refresh token"));
+    }
+}
+@PostMapping("/logout")
+public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody Map<String, String> body) {
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
+    }
+    String accessToken = authHeader.substring(7);
+
+    try {
+        // body me -> { "userId":"4", "email":"test@gmail.com" } ya { "userId":"4", "phone":"6200414974" }
+        boolean deleted = auth.secureLogout(accessToken, body);
+        return ResponseEntity.ok(Map.of(
+            "message", deleted ? "Logged out SuccessFully" : "Token not found in Redis",
+            "deleted", deleted
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+    }
+}
 }
