@@ -24,12 +24,30 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final UserRepository userRepo;
     private final RedisAuthTokenService redisAuthTokenService;
 
+    // FIX: only these specific /api/auth/* paths are public.
+    // Previously the filter skipped EVERY path starting with "/api/auth/",
+    // which meant "/api/auth/update-profile/{userId}" and
+    // "/api/auth/by-pincode/{pincode}" never got their JWT read/validated,
+    // so SecurityContextHolder stayed empty and Spring Security 403'd them
+    // even when a valid Authorization header was sent.
+    private static final List<String> PUBLIC_AUTH_PATHS = List.of(
+            "/api/auth/send-otp",
+            "/api/auth/signup-phone",
+            "/api/auth/send-signup-otp",
+            "/api/auth/verify-otp",
+            "/api/auth/generate-jwt-token",
+            "/api/auth/refresh",
+            "/api/auth/logout"
+    );
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        // auth wali APIs skip
-        if (request.getServletPath().startsWith("/api/auth/")) {
+        String path = request.getServletPath();
+
+        boolean isPublicAuthPath = PUBLIC_AUTH_PATHS.stream().anyMatch(path::startsWith);
+        if (isPublicAuthPath) {
             chain.doFilter(request, response);
             return;
         }
@@ -52,7 +70,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             return;
                         }
 
-                        // ===== LOGOUT CHECK - YE ADD KIYA =====
+                        // ===== LOGOUT CHECK =====
                         boolean isValid = false;
                         if (user.getPhone() != null) {
                             String stored = redisAuthTokenService.getAccessToken(userType, user.getPhone());
