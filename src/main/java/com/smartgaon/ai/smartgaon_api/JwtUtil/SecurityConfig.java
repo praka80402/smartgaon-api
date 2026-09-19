@@ -34,16 +34,6 @@ public class SecurityConfig {
     "/api/otp/send",
     "/api/otp/verify",
     "/api/auth/logout",
-
-
-    // NOTE: "/api/auth/update-profile/**" intentionally NOT added here.
-    // It mutates a specific user's data, so it must stay authenticated.
-    // The 403 on that endpoint was caused by JwtAuthFilter skipping
-    // JWT validation for the whole "/api/auth/" prefix - fixed in
-    // JwtAuthFilter (see PUBLIC_AUTH_PATHS). Once that filter change is
-    // deployed, requests with a valid Bearer token will pass
-    // .anyRequest().authenticated() normally without needing permitAll().
-
     // Profile - CompleteProfile.jsx + AuthModal.jsx
     "/api/profile",
     "/api/profile/**",
@@ -65,7 +55,15 @@ public class SecurityConfig {
     "/api/donations/projects",
     "/api/donations/programs",
     "/admin/dashboard",
-    "/api/villages/sg/smart"
+                        "/api/villages/sg/smart",
+                        "/api/villages/sg",
+                        "/api/villages/sg/**",
+                        "/api/villages/sg/find",
+                        "/api/villages",
+                        "/api/villages/**",
+
+                        "/api/enquiries",
+                        "/api/enquiries/**"
 
                 ).permitAll()
                 .anyRequest().authenticated()
