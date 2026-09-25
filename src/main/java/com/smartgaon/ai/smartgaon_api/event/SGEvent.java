@@ -42,6 +42,9 @@ public class SGEvent {
     @Column(name = "registration_link")
     private String registrationLink;
 
+    @Column(name = "button_text")
+    private String buttonText;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "section_type")
     private EventSectionType sectionType;
