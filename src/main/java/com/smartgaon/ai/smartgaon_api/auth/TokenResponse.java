@@ -1,4 +1,4 @@
-package com.smartgaon.ai.smartgaon_api.auth.dto;
+package com.smartgaon.ai.smartgaon_api.auth;
 
 public record TokenResponse(
         String accessToken,

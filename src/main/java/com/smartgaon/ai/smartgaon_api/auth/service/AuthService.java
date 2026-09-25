@@ -5,11 +5,9 @@ import com.smartgaon.ai.smartgaon_api.JwtUtil.UserType;
 import com.smartgaon.ai.smartgaon_api.auth.repository.UserRepository;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.service.EmailService;
-import com.smartgaon.ai.smartgaon_api.auth.dto.TokenResponse;
 import lombok.RequiredArgsConstructor;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -18,7 +16,7 @@ import com.smartgaon.ai.smartgaon_api.config.RedisAuthTokenService;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+
 
 @Service
 @RequiredArgsConstructor
