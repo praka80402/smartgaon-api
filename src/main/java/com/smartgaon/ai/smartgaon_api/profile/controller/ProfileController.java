@@ -111,7 +111,9 @@ public ResponseEntity<?> updateProfile(@RequestBody User updatedUser) {
     user.setArea(updatedUser.getArea());
     user.setPincode(updatedUser.getPincode());
     user.setEmail(updatedUser.getEmail());
-
+ if(updatedUser.getIsNumberDisplay() != null){
+        user.setIsNumberDisplay(updatedUser.getIsNumberDisplay());
+    }
     updateProfileCompletion(user);
 
     userRepository.save(user);
@@ -360,6 +362,7 @@ public ResponseEntity<?> getProfileImageByEmail(@PathVariable String email) {
         response.put("occupation", user.getOccupation());
         response.put("note", user.getNote());
       response.put("backgroundimage_url", user.getBackgroundImageUrl());
+response.put("isNumberDisplay", Boolean.TRUE.equals(user.getIsNumberDisplay()));
         return response;
     }
 }

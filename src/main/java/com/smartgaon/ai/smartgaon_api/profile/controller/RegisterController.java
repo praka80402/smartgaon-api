@@ -16,9 +16,6 @@ public class RegisterController {
 
     private final UserRepository userRepository;
 
-    // -------------------------------
-    // DTO for Register Board
-    // -------------------------------
     @Data
     public static class RegisterRequest {
         private String name;
@@ -26,38 +23,31 @@ public class RegisterController {
         private String phone;
         private String email;
         private String note;
+        private Boolean isNumberDisplay;
     }
 
-    // -----------------------------------------------------
-    // 1️⃣ REGISTER USER (CREATE OR UPDATE BY PHONE)
-    // -----------------------------------------------------
     @PostMapping("/register")
     public ResponseEntity<?> registerExpert(@RequestBody RegisterRequest req) {
 
         Optional<User> existingUserOpt = userRepository.findByPhone(req.getPhone());
         User user = existingUserOpt.orElseGet(User::new);
 
-        // Basic fields
         user.setPhone(req.getPhone());
         user.setEmail(req.getEmail());
 
-        // Name split
-        if (req.getName() != null) {
+        if (req.getName()!= null) {
             String[] parts = req.getName().trim().split(" ", 2);
             user.setFirstName(parts[0]);
-            user.setLastName(parts.length > 1 ? parts[1] : "");
+            user.setLastName(parts.length > 1? parts[1] : "");
         }
 
-        // Save occupation + note
         user.setOccupation(req.getOccupation());
         user.setNote(req.getNote());
 
-        // Do NOT modify roles
-        // user.setRoles("EXPERT");
+        // FIX: Sirf tick kiya to true, warna false
+        user.setIsNumberDisplay(Boolean.TRUE.equals(req.getIsNumberDisplay()));
 
-        // Mark as profile completed
         user.setProfileCompleted(true);
-
         userRepository.save(user);
 
         return ResponseEntity.ok(
@@ -68,9 +58,6 @@ public class RegisterController {
         );
     }
 
-    // -----------------------------------------------------
-    // 2️⃣ FETCH USERS FOR LOCAL EXPERT LIST (NO RATING)
-    // -----------------------------------------------------
     @GetMapping("/experts")
     public ResponseEntity<?> getExperts() {
 
@@ -78,24 +65,30 @@ public class RegisterController {
         List<Map<String, Object>> experts = new ArrayList<>();
 
         for (User user : allUsers) {
-
-            // Only users with occupation
             if (user.getOccupation() == null || user.getOccupation().isBlank()) {
                 continue;
             }
 
             Map<String, Object> map = new HashMap<>();
-
-            String fullName = (user.getFirstName() == null ? "" : user.getFirstName()) + " " +
-                              (user.getLastName() == null ? "" : user.getLastName());
+            String fullName = (user.getFirstName() == null? "" : user.getFirstName()) + " " +
+                              (user.getLastName() == null? "" : user.getLastName());
 
             map.put("id", user.getId());
             map.put("fullName", fullName.trim());
             map.put("occupation", user.getOccupation());
-            map.put("phone", user.getPhone());
             map.put("email", user.getEmail());
             map.put("note", user.getNote());
             map.put("profileImageUrl", user.getProfileImageUrl());
+
+            // FIX: null ko false mano
+            Boolean isDisplay = Boolean.TRUE.equals(user.getIsNumberDisplay());
+            map.put("isNumberDisplay", isDisplay);
+
+            if (isDisplay) {
+                map.put("phone", user.getPhone());
+            } else {
+                map.put("phone", null);
+            }
 
             experts.add(map);
         }

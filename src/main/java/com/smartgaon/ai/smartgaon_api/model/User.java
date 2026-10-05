@@ -3,6 +3,7 @@ package com.smartgaon.ai.smartgaon_api.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@Builder
 public class User {
 
     @Id
@@ -67,18 +69,18 @@ public class User {
 
     @Column(name = "profile_completed")
     private boolean profileCompleted = false;
-    
+
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
-    
+
     @Column(name = "deleted_by")
     private String deletedBy; // "USER" or "ADMIN"
 
     private LocalDateTime deletedAt;
-    
+
     @Column(name = "account_enabled")
     private Boolean accountEnabled = true;
-    
+
     @Column(name = "firebase_uid", unique = true)
     private String firebaseUid;
 
@@ -88,6 +90,13 @@ public class User {
     @Column(name = "gaonsathi_image_url")
     private String gaonSathiImageUrl;
 
-   @Column(name = "backgroundimage_url")
-   private String backgroundImageUrl;
+    @Column(name = "backgroundimage_url")
+    private String backgroundImageUrl;
+
+    @Column(name = "is_number_display")
+    private Boolean isNumberDisplay =false;
+
+    @Column(name = "user_number_display")
+    @Builder.Default
+    private Boolean userNumberDisplay = false;
 }
