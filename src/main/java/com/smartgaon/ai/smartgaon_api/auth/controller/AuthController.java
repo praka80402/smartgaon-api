@@ -344,74 +344,79 @@ public class AuthController {
             return ResponseEntity.status(500).body(Map.of("error", "Something went wrong"));
         }
     }
-    
- // =====================================================
- // UPDATE PROFILE
- // =====================================================
- @PutMapping("/update-profile/{id}")
- public ResponseEntity<?> updateProfile(
-         @PathVariable Long id,
-         @RequestBody Map<String, String> req) {
 
-     try {
-         User updatedUser = auth.updateUserProfile(id, req);
-         return ResponseEntity.ok(
-                 Map.of(
-                         "message", "Profile updated successfully",
-                         "user", updatedUser
-                 )
-         );
-     } catch (RuntimeException e) {
-         return ResponseEntity.status(400).body(
-                 Map.of("error", e.getMessage())
-         );
-     }
- }
+    // =====================================================
+    // UPDATE PROFILE
+    // =====================================================
+    @PutMapping("/update-profile/{id}")
+    public ResponseEntity<?> updateProfile(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> req) {
+
+        try {
+            User updatedUser = auth.updateUserProfile(id, req);
+            return ResponseEntity.ok(
+                    Map.of(
+                            "message", "Profile updated successfully",
+                            "user", updatedUser
+                    )
+            );
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(
+                    Map.of("error", e.getMessage())
+            );
+        }
+    }
     @PostMapping("/generate-jwt-token")
     public ResponseEntity<?> generateToken(@RequestParam(required = false) String phone, @RequestParam(required = false) String email, @RequestParam(defaultValue = "web") String userType) {
         return ResponseEntity.ok(auth.generateToken(phone, email, userType));
     }
     @PostMapping("/refresh")
-public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
-    try {
-        String refreshToken = req.get("refreshToken");
-        if (refreshToken == null || refreshToken.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
+        try {
+            String refreshToken = req.get("refreshToken");
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+            }
+
+            AuthService.TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
+
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", newTokens.accessToken(),
+                    "refreshToken", newTokens.refreshToken(),
+                    "tokenType", "Bearer",
+                    "expiresIn", newTokens.expiresIn()
+            ));
+
+        } catch (IllegalStateException e) {
+            // Refresh token expire ho gaya -> user ko logout karna padega
+            return ResponseEntity.status(401).body(Map.of("error", e.getMessage(), "navigate", "login"));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("error", "Invalid refresh token"));
         }
-
-        AuthService.TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
-
-        return ResponseEntity.ok(Map.of(
-            "accessToken", newTokens.accessToken(),
-            "refreshToken", newTokens.refreshToken(),
-            "tokenType", "Bearer",
-            "expiresIn", newTokens.expiresIn()
-        ));
-
-    } catch (IllegalStateException e) {
-        // Refresh token expire ho gaya -> user ko logout karna padega
-        return ResponseEntity.status(401).body(Map.of("error", e.getMessage(), "navigate", "login"));
-    } catch (Exception e) {
-        return ResponseEntity.status(401).body(Map.of("error", "Invalid refresh token"));
     }
-}
-@PostMapping("/logout")
-public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody Map<String, String> body) {
-    String authHeader = request.getHeader("Authorization");
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
-    }
-    String accessToken = authHeader.substring(7);
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody Map<String, String> body) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
+        }
+        String accessToken = authHeader.substring(7);
 
-    try {
-        // body me -> { "userId":"4", "email":"test@gmail.com" } ya { "userId":"4", "phone":"6200414974" }
-        boolean deleted = auth.secureLogout(accessToken, body);
-        return ResponseEntity.ok(Map.of(
-            "message", deleted ? "Logged out SuccessFully" : "Token not found in Redis",
-            "deleted", deleted
-        ));
-    } catch (Exception e) {
-        return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        try {
+            // body me -> { "userId":"4", "email":"test@gmail.com" } ya { "userId":"4", "phone":"6200414974" }
+            boolean deleted = auth.secureLogout(accessToken, body);
+            return ResponseEntity.ok(Map.of(
+                    "message", deleted ? "Logged out SuccessFully" : "Token not found in Redis",
+                    "deleted", deleted
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
     }
-}
+
+    @PutMapping("/number-display")
+    public ResponseEntity<String> updateNumberDisplay(@RequestParam Long userId, @RequestParam boolean isDisplay) {
+        return ResponseEntity.ok(auth.updateNumberDisplay(userId, isDisplay));
+    }
 }

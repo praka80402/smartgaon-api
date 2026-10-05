@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.smartgaon.ai.smartgaon_api.config.RedisAuthTokenService;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -313,8 +314,18 @@ public class AuthService {
         return repo.save(user);
     }
 
+
+    @Transactional(readOnly = true) // ye lagana zaruri hai
     public List<User> getUsersByPinCode(String pincode) {
-        return repo.findByPincode(pincode);
+        List<User> users = repo.findByPincode(pincode);
+
+        for (User u : users) {
+            // user ne hide kiya hai to phone null
+            if (!Boolean.TRUE.equals(u.getUserNumberDisplay())) {
+                u.setPhone(null);
+            }
+        }
+        return users;
     }
 
     public boolean deleteUserByPhone(String phone) {
@@ -470,6 +481,20 @@ public class AuthService {
         redisAuthTokenService.saveTokens(type.name(), loginIdentifier, accessToken, refreshToken, refreshTokenExpirySeconds);
 
         return new TokenResponse(accessToken, refreshToken, "Bearer", accessTokenExpirySeconds, refreshTokenExpirySeconds);
+    }
+
+    public String updateNumberDisplay(Long userId, boolean isDisplay) {
+        User user = repo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+
+        user.setUserNumberDisplay(isDisplay);
+        repo.save(user);
+
+        if (isDisplay) {
+            return "Thanks for giving permission to display your number in our Village Directory. Your number is now visible to everyone.";
+        } else {
+            return "Your number is now hidden. It will not be visible in the Village Directory. You can turn it on anytime.";
+        }
     }
 
     public record TokenResponse(
