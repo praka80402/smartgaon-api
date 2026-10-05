@@ -15,6 +15,8 @@ public class TalentCompetition {
 
     private String name;
     private String description;
+    private String stateName;
+    private String state;
 
     @Enumerated(EnumType.STRING)
     private TalentCategory category;
