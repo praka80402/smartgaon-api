@@ -117,21 +117,8 @@ public class SchoolCompetitionService {
             throw new IllegalArgumentException("Invalid School Verification Code");
         }
 
-        boolean alreadySubmitted = submissionRepository.existsByCompetitionIdAndGroupCategoryAndClassGradeAndSchoolNameAndRollNumber(
-                submission.getCompetitionId(), submission.getGroupCategory(), submission.getClassGrade(),
-                submission.getSchoolName(), submission.getRollNumber());
-        if (!alreadySubmitted) {
-            alreadySubmitted = submissionRepository
-                    .findByCompetitionIdAndGroupCategoryAndSchoolName(
-                            submission.getCompetitionId(), submission.getGroupCategory(), submission.getSchoolName())
-                    .stream()
-                    .anyMatch(existing -> submission.getClassGrade().equals(existing.getClassGrade())
-                            && submission.getRollNumber().equals(
-                                    normalizeCommaSeparatedValue(existing.getRollNumber(), "rollNumber")));
-        }
-        if (alreadySubmitted) {
-            throw new IllegalStateException("An entry has already been submitted for this student in this competition group");
-        }
+        // Allow multiple submissions from the same school, class, and group category
+        // Duplicate check removed per requirement
     }
 
     private void validateMediaFile(MultipartFile file) {
@@ -205,16 +192,20 @@ public class SchoolCompetitionService {
             }
         }
 
-        // 2. In AUTOMATIC mode (or if not MANUAL), also determine winners by total score per group
+        // 2. In AUTOMATIC mode (or if not MANUAL), also determine winners by total score per class/group
         boolean isAutomatic = comp == null || !"MANUAL".equalsIgnoreCase(comp.getWinnerAnnouncementMode());
         if (isAutomatic) {
             java.util.Map<String, List<SchoolCompetitionSubmission>> grouped = subs.stream()
-                    .collect(java.util.stream.Collectors.groupingBy(s -> s.getGroupCategory() != null ? s.getGroupCategory() : "General"));
+                    .collect(java.util.stream.Collectors.groupingBy(s -> {
+                        String grp = s.getGroupCategory() != null ? s.getGroupCategory() : "General";
+                        String cls = s.getClassGrade() != null ? s.getClassGrade() : "";
+                        return grp + "___" + cls;
+                    }));
 
             for (java.util.Map.Entry<String, List<SchoolCompetitionSubmission>> entry : grouped.entrySet()) {
                 List<SchoolCompetitionSubmission> groupSubs = entry.getValue();
 
-                // Check ranks already used by manual winners in this group
+                // Check ranks already used by manual winners in this group/class
                 java.util.Set<Integer> usedRanks = new java.util.HashSet<>();
                 for (SchoolCompetitionSubmission s : groupSubs) {
                     if (winnersMap.containsKey(s.getSubmissionId()) && winnersMap.get(s.getSubmissionId()).getWinnerRank() != null) {
@@ -222,7 +213,7 @@ public class SchoolCompetitionService {
                     }
                 }
 
-                // Sort non-rejected entries with scores descending
+                // Sort non-rejected entries with valid judge score (> 0) descending
                 List<SchoolCompetitionSubmission> sorted = groupSubs.stream()
                         .filter(s -> s.getTotalScore() != null && s.getTotalScore() > 0)
                         .sorted((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()))
