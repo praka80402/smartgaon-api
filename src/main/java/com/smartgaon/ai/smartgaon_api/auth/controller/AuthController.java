@@ -473,7 +473,6 @@ public class AuthController {
         if (!phone.matches("^[6-9]\\d{9}$")) {
             return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid 10-digit mobile number."));
         }
-        // Test number ke liye bhi pehle check karo already registered hai ya nahi
         if (TEST_PHONE.equals(phone)) {
             Optional<User> existingUser = auth.findByPhone(phone);
             if (existingUser.isPresent()) {
@@ -557,54 +556,48 @@ public class AuthController {
         catch (Exception e) { return ResponseEntity.status(400).body(Map.of("error", e.getMessage())); }
     }
 
-    // =================== LOGIN - SEND OTP (CORRECTED) ===================
     @PostMapping("/send-otp")
     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
-        Optional<User> userOpt = auth.findByPhone(mobile);
-
-        // 1. Agar user exist hi nahi karta to purana wala logic chalao -> User not found
-        if (userOpt.isEmpty()) {
-            return auth.sendOtp(mobile);
-        }
-
-        User user = userOpt.get();
-        // 2. Deleted check
-        if (Boolean.TRUE.equals(user.getIsDeleted())) {
-            return ResponseEntity.status(403).body(Map.of("error", "You are no longer a user.", "deletedBy", user.getDeletedBy()));
-        }
-
-        // 3. User exist karta hai aur test number hai to fixed OTP
         if (TEST_PHONE.equals(mobile)) {
             return ResponseEntity.ok(Map.of("message", "OTP sent (Test - 1235)", "isTest", true));
         }
-
-        // 4. Normal number
+        Optional<User> userOpt = auth.findByPhone(mobile);
+        if (userOpt.isEmpty()) {
+            return auth.sendOtp(mobile);
+        }
+        User user = userOpt.get();
+        if (Boolean.TRUE.equals(user.getIsDeleted())) {
+            return ResponseEntity.status(403).body(Map.of("error", "You are no longer a user.", "deletedBy", user.getDeletedBy()));
+        }
         return auth.sendOtp(mobile);
     }
 
-    // =================== VERIFY OTP - LOGIN (CORRECTED) ===================
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
-        Optional<User> userOpt = auth.findByPhone(mobile);
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
-        }
-
-        User user = userOpt.get();
-        if (Boolean.TRUE.equals(user.getIsDeleted())) {
-            return ResponseEntity.status(403).body(Map.of("error", "You are no longer a user. Deleted by: " + user.getDeletedBy(), "verified", false));
-        }
-
-        // Test number ke liye fixed OTP
-        if (TEST_PHONE.equals(mobile)) {
-            if (TEST_OTP.equals(otp)) {
-                return ResponseEntity.ok(auth.generateToken(mobile, null, "mobile"));
+        if (TEST_PHONE.equals(mobile) && TEST_OTP.equals(otp)) {
+            Optional<User> userOpt = auth.findByPhone(mobile);
+            if (userOpt.isPresent()) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "verified", true,
+                    "firstTime", false,
+                    "message", "OTP verified successfully!",
+                    "phone", mobile,
+                    "user", userOpt.get()
+                ));
             } else {
-                return ResponseEntity.status(401).body(Map.of("error", "Invalid OTP", "verified", false));
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "verified", true,
+                    "firstTime", true,
+                    "message", "OTP verified successfully!",
+                    "phone", mobile
+                ));
             }
         }
-
+        if (TEST_PHONE.equals(mobile)) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "verified", false, "message", "Wrong OTP - Test OTP is 1235"));
+        }
         return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
     }
 
