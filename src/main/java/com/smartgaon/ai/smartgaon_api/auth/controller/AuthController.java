@@ -556,21 +556,36 @@ public class AuthController {
         catch (Exception e) { return ResponseEntity.status(400).body(Map.of("error", e.getMessage())); }
     }
 
-    @PostMapping("/send-otp")
-    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
-        if (TEST_PHONE.equals(mobile)) {
-            return ResponseEntity.ok(Map.of("message", "OTP sent (Test - 1235)", "isTest", true));
-        }
-        Optional<User> userOpt = auth.findByPhone(mobile);
-        if (userOpt.isEmpty()) {
-            return auth.sendOtp(mobile);
-        }
-        User user = userOpt.get();
-        if (Boolean.TRUE.equals(user.getIsDeleted())) {
-            return ResponseEntity.status(403).body(Map.of("error", "You are no longer a user.", "deletedBy", user.getDeletedBy()));
-        }
-        return auth.sendOtp(mobile);
+@PostMapping("/send-otp")
+public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+    Optional<User> userOpt = auth.findByPhone(mobile);
+
+    // 1. Pehle check karo user hai bhi ya nahi
+    if (userOpt.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of(
+            "error", "User not found",
+            "navigate", "signup"
+        ));
     }
+
+    User user = userOpt.get();
+
+    // 2. Phir check karo deleted hai ya nahi
+    if (Boolean.TRUE.equals(user.getIsDeleted())) {
+        return ResponseEntity.status(403).body(Map.of(
+            "error", "You are no longer a user.",
+            "deletedBy", user.getDeletedBy()
+        ));
+    }
+
+    // 3. Ab test number ka check - tabhi OTP bhejo
+    if (TEST_PHONE.equals(mobile)) {
+        return ResponseEntity.ok(Map.of("message", "OTP sent", "isTest", true));
+    }
+
+    // 4. Normal number
+    return auth.sendOtp(mobile);
+}
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {

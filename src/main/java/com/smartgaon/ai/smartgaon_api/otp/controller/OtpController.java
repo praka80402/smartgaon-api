@@ -77,24 +77,39 @@ public class OtpController {
         this.authService = authService;
     }
 
-    @PostMapping("/send")
-    public ResponseEntity<?> sendOtp(@RequestBody OtpSendRequest request) {
-        try {
-            if (TEST_PHONE.equals(request.getMobile())) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "OTP sent (Test - 1235)",
-                    "isTest", true
-                ));
-            }
-            return ResponseEntity.ok(otpService.sendOtp(request.getMobile()));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", ex.getMessage()));
-        } catch (IllegalStateException ex) {
+   @PostMapping("/send")
+public ResponseEntity<?> sendOtp(@RequestBody OtpSendRequest request) {
+    try {
+        Optional<User> userOpt = authService.findByPhone(request.getMobile());
+        
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of(
+                "success", false,
+                "error", "User not found",
+                "navigate", "signup",
+                "message", "User not found"
+            ));
+        }
+        if (Boolean.TRUE.equals(userOpt.get().getIsDeleted())) {
+            return ResponseEntity.status(403).body(Map.of(
+                "success", false,
+                "error", "You are no longer a user."
+            ));
+        }
+
+        if (TEST_PHONE.equals(request.getMobile())) {
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "OTP sent",
+                "isTest", true
+            ));
+        }
+        return ResponseEntity.ok(otpService.sendOtp(request.getMobile()));
+    } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                     .body(Map.of("success", false, "message", ex.getMessage()));
         }
-    }
+}
 
     @PostMapping("/verify")
     public ResponseEntity<?> verifyOtp(@RequestBody OtpVerifyRequest request) {
@@ -124,7 +139,7 @@ public class OtpController {
                 return ResponseEntity.ok(Map.of(
                     "success", false,
                     "verified", false,
-                    "message", "Invalid OTP - Test OTP is 1235"
+                    "message", "Invalid OTP "
                 ));
             }
             return ResponseEntity.ok(otpService.verifyOtp(request.getMobile(), request.getOtp()));
