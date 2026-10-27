@@ -3,14 +3,12 @@ package com.smartgaon.ai.smartgaon_api.scheme.controller;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
-
 import org.springframework.web.bind.annotation.*;
 
 import com.smartgaon.ai.smartgaon_api.scheme.entity.Category;
 import com.smartgaon.ai.smartgaon_api.scheme.entity.*;
 import com.smartgaon.ai.smartgaon_api.scheme.service.UserSchemeService;
 import com.smartgaon.ai.smartgaon_api.scheme.dto.InterestedRequest;
-
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,12 +29,15 @@ public class UserSchemeController {
     // ================= CENTRAL SCHEMES =================
     @GetMapping("/central")
     public List<Scheme> getCentralSchemes(
-            @RequestParam Long categoryId
+            @RequestParam(required = false) Long categoryId
     ) {
-        return service.getCentralSchemes(categoryId);
+        if (categoryId != null) {
+            return service.getCentralSchemes(categoryId);
+        }
+        return service.getAllCentralSchemes();
     }
     
- // ================= SCHEME DETAIL =================
+    // ================= SCHEME DETAIL =================
     @GetMapping("/{schemeId}")
     public Scheme getSchemeDetail(
             @PathVariable Long schemeId
@@ -44,19 +45,19 @@ public class UserSchemeController {
         return service.getSchemeDetail(schemeId);
     }
 
-
     // ================= STATE SCHEMES =================
- // ================= STATE SCHEMES =================
     @GetMapping("/state")
     public List<Scheme> getStateSchemes(
-            @RequestParam Long categoryId,
+            @RequestParam(required = false) Long categoryId,
             @RequestParam State state
     ) {
-        return service.getStateSchemesByState(categoryId, state);
+        if (categoryId != null) {
+            return service.getStateSchemesByState(categoryId, state);
+        }
+        return service.getAllStateSchemesByState(state);
     }
     
-    
- // ================= INTERESTED =================
+    // ================= INTERESTED =================
     @PostMapping("/{schemeId}/interested")
     public ResponseEntity<?> addInterested(
             @PathVariable Long schemeId,
@@ -82,7 +83,5 @@ public class UserSchemeController {
     ) {
         return service.isAlreadyInterested(schemeId, phone);
     }
-
-
 
 }
