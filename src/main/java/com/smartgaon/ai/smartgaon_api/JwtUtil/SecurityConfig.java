@@ -67,8 +67,9 @@ public class SecurityConfig {
 
                         "/api/enquiries",
                         "/api/enquiries/**",
-                        "/api/delete-account/**",   // ← add this (website Delete Account page)
-                        "/api/chat/**"
+                        "/api/delete-account/**",
+                        "/api/chat/**",
+                        "/api/mandi/**"
 
                 ).permitAll()
                 .anyRequest().authenticated()

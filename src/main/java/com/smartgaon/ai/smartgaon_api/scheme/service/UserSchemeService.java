@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import com.smartgaon.ai.smartgaon_api.scheme.dto.InterestedRequest;
 import com.smartgaon.ai.smartgaon_api.scheme.entity.InterestedUser;
 
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,7 +23,6 @@ public class UserSchemeService {
     private final UserCategoryRepository categoryRepo;
     private final UserRepository userRepo;
     private final InterestedUserRepository interestedRepo;
-
 
     // ================= CATEGORIES =================
     public List<Category> getAllCategories() {
@@ -38,11 +36,15 @@ public class UserSchemeService {
                 SchemeType.CENTRAL
         );
     }
+
+    public List<Scheme> getAllCentralSchemes() {
+        return schemeRepo.findBySchemeType(SchemeType.CENTRAL);
+    }
+
     public Scheme getSchemeDetail(Long schemeId) {
         return schemeRepo.findById(schemeId)
                 .orElseThrow(() -> new RuntimeException("Scheme not found"));
     }
-
 
     // ================= STATE SCHEMES (FROM USER PROFILE) =================
     public List<Scheme> getStateSchemesByState(Long categoryId, State state) {
@@ -52,37 +54,14 @@ public class UserSchemeService {
                 state
         );
     }
-    
-    
-//    ------------------------------------
-    
-//    public void addInterestedUser(Long schemeId, InterestedRequest request) {
-//
-//        Scheme scheme = schemeRepo.findById(schemeId)
-//                .orElseThrow(() -> new RuntimeException("Scheme not found"));
-//
-//        // Save interested user
-//        InterestedUser user = InterestedUser.builder()
-//                .name(request.getName())
-//                .village(request.getVillage())
-//                .pincode(request.getPincode())
-//                .phoneNumber(request.getPhoneNumber())
-//                .date(LocalDateTime.now())
-//                .scheme(scheme)
-//                .build();
-//
-//        interestedRepo.save(user);
-//
-//        // Increase count
-//        if (scheme.getInterestCount() == null) {
-//            scheme.setInterestCount(0L);
-//        }
-//
-//        scheme.setInterestCount(scheme.getInterestCount() + 1);
-//
-//        schemeRepo.save(scheme);
-//    }
-    
+
+    public List<Scheme> getAllStateSchemesByState(State state) {
+        return schemeRepo.findBySchemeTypeAndState(
+                SchemeType.STATE,
+                state
+        );
+    }
+
     public void addInterestedUser(Long schemeId, InterestedRequest request) {
 
         if (
@@ -120,8 +99,4 @@ public class UserSchemeService {
     public boolean isAlreadyInterested(Long schemeId, String phone) {
         return interestedRepo.existsBySchemeIdAndPhoneNumber(schemeId, phone);
     }
-
-
-
-
 }

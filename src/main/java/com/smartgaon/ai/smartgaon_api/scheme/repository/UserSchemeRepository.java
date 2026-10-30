@@ -17,4 +17,11 @@ public interface UserSchemeRepository extends JpaRepository<Scheme, Long> {
             SchemeType schemeType,
             State state
     );
+
+    List<Scheme> findBySchemeType(SchemeType schemeType);
+
+    List<Scheme> findBySchemeTypeAndState(
+            SchemeType schemeType,
+            State state
+    );
 }
