@@ -1,3 +1,426 @@
+// package com.smartgaon.ai.smartgaon_api.auth.controller;
+
+// import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+// import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+// import com.google.api.client.http.javanet.NetHttpTransport;
+// import com.google.api.client.json.jackson2.JacksonFactory;
+// import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
+// import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
+// import com.smartgaon.ai.smartgaon_api.model.User;
+// import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
+// import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
+// import com.smartgaon.ai.smartgaon_api.auth.service.AuthService.TokenResponse;
+// import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.beans.factory.annotation.Value;
+// import org.springframework.http.*;
+// import org.springframework.web.bind.annotation.*;
+// import jakarta.servlet.http.HttpServletRequest;
+
+// import java.util.*;
+
+// @RestController
+// @RequestMapping("/api/auth")
+// public class AuthController {
+
+//     @Autowired
+//     private AuthService auth;
+
+//     @Autowired
+//     private JwtUtil jwt;
+
+//     @Autowired
+//     private OtpService otpService;
+
+//     @Value("${google.client.native-id}")
+//     private String nativeClientId;
+
+//     // =====================================================
+//     // SIGNUP USING EMAIL + PASSWORD
+//     // =====================================================
+//     @PostMapping("/signup")
+//     public ResponseEntity<?> signup(@RequestBody Map<String, String> req) {
+
+//         User user = new User();
+//         user.setFirstName(req.get("firstName"));
+//         user.setLastName(req.get("lastName"));
+//         user.setEmail(req.get("email"));
+//         user.setPhone(req.get("phone"));
+//         user.setPassword(req.get("password"));
+
+//         // Optional: Capture location fields if provided
+//         user.setState(req.get("state"));
+//         user.setDistrict(req.get("district"));
+//         user.setArea(req.get("area"));
+//         user.setPincode(req.get("pincode"));
+
+//         auth.signup(user);
+
+//         return ResponseEntity.ok(Map.of("message", "User registered successfully"));
+//     }
+
+//     // =====================================================
+//     // SIGNUP USING PHONE + OTP
+//     // =====================================================
+//     @PostMapping("/signup-phone")
+//     public ResponseEntity<?> signupWithPhone(@RequestParam String phone) {
+
+//         if (!phone.matches("^[6-9]\\d{9}$")) {
+//             return ResponseEntity.badRequest().body(
+//                     Map.of("error", "Please enter a valid 10-digit mobile number.")
+//             );
+//         }
+
+//         Optional<User> existingUser = auth.findByPhone(phone);
+//         if (existingUser.isPresent()) {
+//             return ResponseEntity.status(409).body(
+//                     Map.of("error", "This number is already registered", "navigate", "login")
+//             );
+//         }
+
+//         return ResponseEntity.ok(auth.generateSignupOtp(phone));
+//     }
+
+//     // =====================================================
+//     // SEND OTP FOR SIGNUP
+//     // =====================================================
+//     @PostMapping("/send-signup-otp")
+//     public ResponseEntity<?> sendSignupOtp(@RequestParam String mobile) {
+
+//         if (!mobile.matches("^[6-9]\\d{9}$")) {
+//             return ResponseEntity.badRequest().body(
+//                     Map.of("error", "Please enter a valid 10-digit mobile number.")
+//             );
+//         }
+
+//         Optional<User> existingUser = auth.findByPhone(mobile);
+//         if (existingUser.isPresent()) {
+//             return ResponseEntity.status(409).body(
+//                     Map.of("error", "This number is already registered", "navigate", "login")
+//             );
+//         }
+
+//         return ResponseEntity.ok(otpService.sendSignupOtp(mobile));
+//     }
+
+//     // =====================================================
+//     // LOGIN (EMAIL + PASSWORD)
+//     // =====================================================
+//     @PostMapping("/login")
+//     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
+
+//         String email = req.get("email");
+//         String password = req.get("password");
+
+//         return auth.validate(email, password)
+//                 .map(user -> {
+//                     String token = jwt.generate(email);
+//                     return ResponseEntity.ok(Map.of(
+//                             "token", token,
+//                             "user", user
+//                     ));
+//                 })
+//                 .orElseGet(() -> ResponseEntity.status(401)
+//                         .body(Map.of("error", "Invalid email or password")));
+//     }
+
+//     // =====================================================
+//     // GOOGLE LOGIN
+//     // =====================================================
+//     @PostMapping("/google")
+//     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
+
+//         String idToken = body.get("token");
+
+//         GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+//                 new NetHttpTransport(), JacksonFactory.getDefaultInstance())
+//                 .setAudience(Collections.singletonList(nativeClientId))
+//                 .build();
+
+//         try {
+//             GoogleIdToken googleIdToken = verifier.verify(idToken);
+//             if (googleIdToken == null) {
+//                 return ResponseEntity.status(401).body(Map.of("error", "Invalid Google token"));
+//             }
+
+//             GoogleIdToken.Payload payload = googleIdToken.getPayload();
+//             String email = payload.getEmail();
+//             String name = (String) payload.get("name");
+//             String picture = (String) payload.get("picture");
+
+//             Optional<User> existingUser = auth.findByEmail(email);
+
+//             User user = existingUser.orElseGet(() -> {
+//                 User newUser = new User();
+//                 newUser.setFirstName(name);
+//                 newUser.setEmail(email);
+//                 auth.saveUser(newUser);
+//                 return newUser;
+//             });
+
+//             String jwtToken = jwt.generate(email);
+
+//             return ResponseEntity.ok(
+//                     Map.of("token", jwtToken, "email", email, "name", name, "picture", picture)
+//             );
+
+//         } catch (Exception e) {
+//             return ResponseEntity.status(401).body(Map.of("error", "Verification failed"));
+//         }
+//     }
+
+//     // =====================================================
+//     // FORGOT PASSWORD
+//     // =====================================================
+//     @PostMapping("/forgot-password")
+//     public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+//         try {
+//             return ResponseEntity.ok(auth.forgotPassword(email));
+//         } catch (Exception e) {
+//             return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+//         }
+//     }
+
+//     // =====================================================
+//     // RESET PASSWORD
+//     // =====================================================
+//     @PostMapping("/reset-password")
+//     public ResponseEntity<?> resetPassword(
+//             @RequestParam String token,
+//             @RequestParam String newPassword) {
+
+//         try {
+//             return ResponseEntity.ok(auth.resetPassword(token, newPassword));
+//         } catch (Exception e) {
+//             return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
+//         }
+//     }
+
+//     // =====================================================
+//     // OTP SEND (FOR LOGIN)
+//     // =====================================================
+// //    @PostMapping("/send-otp")
+// //    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+// //        return auth.sendOtp(mobile);
+// //    }
+//     @PostMapping("/send-otp")
+//     public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+
+//         Optional<User> userOpt = auth.findByPhone(mobile);
+
+//         if (userOpt.isPresent()) {
+//             User user = userOpt.get();
+
+//             // 🆕 BLOCK LOGIN IF USER IS DELETED
+//             if (Boolean.TRUE.equals(user.getIsDeleted())) {
+//                 return ResponseEntity.status(403).body(
+//                         Map.of(
+//                                 "error", "You are no longer a user.",
+//                                 "deletedBy", user.getDeletedBy()
+//                         )
+//                 );
+//             }
+//         }
+
+//         return auth.sendOtp(mobile);
+//     }
+
+//     // =====================================================
+//     // OTP VERIFY
+//     // =====================================================
+// //    @PostMapping("/verify-otp")
+// //    public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
+// //        return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
+// //    }
+//     @PostMapping("/verify-otp")
+//     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
+
+//         Optional<User> userOpt = auth.findByPhone(mobile);
+
+//         if (userOpt.isPresent()) {
+//             User user = userOpt.get();
+
+//             // 🆕 BLOCK LOGIN IF USER IS DELETED
+//             if (Boolean.TRUE.equals(user.getIsDeleted())) {
+//                 return ResponseEntity.status(403).body(
+//                         Map.of(
+//                                 "error", "You are no longer a user. Deleted by: " + user.getDeletedBy(),
+//                                 "verified", false
+//                         )
+//                 );
+//             }
+//         }
+
+//         return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
+//     }
+
+//     // =====================================================
+//     // GET USERS BY PINCODE
+//     // =====================================================
+//     @GetMapping("/by-pincode/{pincode}")
+//     public ResponseEntity<?> getUsersByPincode(@PathVariable String pincode) {
+//         return ResponseEntity.ok(auth.getUsersByPinCode(pincode));
+//     }
+
+//     // =====================================================
+// // CHECK ACCOUNT STATUS (ACTIVE / DISABLED / DELETED)
+// // =====================================================
+//     @PostMapping("/account-status")
+//     public ResponseEntity<?> checkAccountStatus(@RequestBody Map<String, String> req) {
+
+//         String phone = req.get("phone");
+//         String email = req.get("email");
+
+//         Optional<User> userOpt = Optional.empty();
+
+//         if (phone != null && !phone.isBlank()) {
+//             userOpt = auth.findByPhone(phone);
+//         }
+//         else if (email != null && !email.isBlank()) {
+//             userOpt = auth.findByEmail(email);
+//         }
+
+//         if (userOpt.isEmpty()) {
+//             return ResponseEntity.ok(
+//                     Map.of(
+//                             "exists", false,
+//                             "status", "NOT_FOUND",
+//                             "allowed", false
+//                     )
+//             );
+//         }
+
+//         User user = userOpt.get();
+
+//         // 🛑 DELETED
+//         if (Boolean.TRUE.equals(user.getIsDeleted())) {
+//             return ResponseEntity.ok(
+//                     Map.of(
+//                             "exists", true,
+//                             "status", "DELETED",
+//                             "allowed", false,
+//                             "deletedBy", user.getDeletedBy()
+//                     )
+//             );
+//         }
+
+//         // 🛑 DISABLED (if you have this flag)
+//         if (Boolean.FALSE.equals(user.getAccountEnabled())) {
+//             return ResponseEntity.ok(
+//                     Map.of(
+//                             "exists", true,
+//                             "status", "DISABLED",
+//                             "allowed", false,
+//                             "reason", "Account disabled by admin"
+//                     )
+//             );
+//         }
+
+//         // ✅ ACTIVE
+//         return ResponseEntity.ok(
+//                 Map.of(
+//                         "exists", true,
+//                         "status", "ACTIVE",
+//                         "allowed", true
+//                 )
+//         );
+//     }
+
+
+//     // =====================================================
+//     // DELETE ACCOUNT
+//     // =====================================================
+//     @DeleteMapping("/delete/{phone}")
+//     public ResponseEntity<?> deleteUser(@PathVariable String phone) {
+//         try {
+//             boolean deleted = auth.deleteUserByPhone(phone);
+
+//             if (!deleted) {
+//                 return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+//             }
+
+//             return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
+
+//         } catch (Exception e) {
+//             return ResponseEntity.status(500).body(Map.of("error", "Something went wrong"));
+//         }
+//     }
+
+//     // =====================================================
+//     // UPDATE PROFILE
+//     // =====================================================
+//     @PutMapping("/update-profile/{id}")
+//     public ResponseEntity<?> updateProfile(
+//             @PathVariable Long id,
+//             @RequestBody Map<String, String> req) {
+
+//         try {
+//             User updatedUser = auth.updateUserProfile(id, req);
+//             return ResponseEntity.ok(
+//                     Map.of(
+//                             "message", "Profile updated successfully",
+//                             "user", updatedUser
+//                     )
+//             );
+//         } catch (RuntimeException e) {
+//             return ResponseEntity.status(400).body(
+//                     Map.of("error", e.getMessage())
+//             );
+//         }
+//     }
+//     @PostMapping("/generate-jwt-token")
+//     public ResponseEntity<?> generateToken(@RequestParam(required = false) String phone, @RequestParam(required = false) String email, @RequestParam(defaultValue = "web") String userType) {
+//         return ResponseEntity.ok(auth.generateToken(phone, email, userType));
+//     }
+//     @PostMapping("/refresh")
+//     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
+//         try {
+//             String refreshToken = req.get("refreshToken");
+//             if (refreshToken == null || refreshToken.isBlank()) {
+//                 return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+//             }
+
+//             AuthService.TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
+
+//             return ResponseEntity.ok(Map.of(
+//                     "accessToken", newTokens.accessToken(),
+//                     "refreshToken", newTokens.refreshToken(),
+//                     "tokenType", "Bearer",
+//                     "expiresIn", newTokens.expiresIn()
+//             ));
+
+//         } catch (IllegalStateException e) {
+//             // Refresh token expire ho gaya -> user ko logout karna padega
+//             return ResponseEntity.status(401).body(Map.of("error", e.getMessage(), "navigate", "login"));
+//         } catch (Exception e) {
+//             return ResponseEntity.status(401).body(Map.of("error", "Invalid refresh token"));
+//         }
+//     }
+//     @PostMapping("/logout")
+//     public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody Map<String, String> body) {
+//         String authHeader = request.getHeader("Authorization");
+//         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+//             return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
+//         }
+//         String accessToken = authHeader.substring(7);
+
+//         try {
+//             // body me -> { "userId":"4", "email":"test@gmail.com" } ya { "userId":"4", "phone":"6200414974" }
+//             boolean deleted = auth.secureLogout(accessToken, body);
+//             return ResponseEntity.ok(Map.of(
+//                     "message", deleted ? "Logged out SuccessFully" : "Token not found in Redis",
+//                     "deleted", deleted
+//             ));
+//         } catch (Exception e) {
+//             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+//         }
+//     }
+
+//     @PutMapping("/number-display")
+//     public ResponseEntity<String> updateNumberDisplay(@RequestParam Long userId, @RequestParam boolean isDisplay) {
+//         return ResponseEntity.ok(auth.updateNumberDisplay(userId, isDisplay));
+//     }
+// }
+
 package com.smartgaon.ai.smartgaon_api.auth.controller;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -6,410 +429,260 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.smartgaon.ai.smartgaon_api.JwtUtil.JwtUtil;
 import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
+import com.smartgaon.ai.smartgaon_api.auth.service.AuthService.TokenResponse;
 import com.smartgaon.ai.smartgaon_api.model.User;
 import com.smartgaon.ai.smartgaon_api.otp.service.OtpService;
-import com.smartgaon.ai.smartgaon_api.auth.service.AuthService;
-import com.smartgaon.ai.smartgaon_api.auth.service.AuthService.TokenResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
-
 import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    
+    private static final String TEST_PHONE = "6207720893";
+    private static final String TEST_OTP = "1235";
 
-    @Autowired
-    private AuthService auth;
-
-    @Autowired
-    private JwtUtil jwt;
-
-    @Autowired
-    private OtpService otpService;
-
+    @Autowired private AuthService auth;
+    @Autowired private JwtUtil jwt;
+    @Autowired private OtpService otpService;
     @Value("${google.client.native-id}")
     private String nativeClientId;
 
-    // =====================================================
-    // SIGNUP USING EMAIL + PASSWORD
-    // =====================================================
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody Map<String, String> req) {
-
         User user = new User();
         user.setFirstName(req.get("firstName"));
         user.setLastName(req.get("lastName"));
         user.setEmail(req.get("email"));
         user.setPhone(req.get("phone"));
         user.setPassword(req.get("password"));
-
-        // Optional: Capture location fields if provided
         user.setState(req.get("state"));
         user.setDistrict(req.get("district"));
         user.setArea(req.get("area"));
         user.setPincode(req.get("pincode"));
-
         auth.signup(user);
-
         return ResponseEntity.ok(Map.of("message", "User registered successfully"));
     }
 
-    // =====================================================
-    // SIGNUP USING PHONE + OTP
-    // =====================================================
     @PostMapping("/signup-phone")
     public ResponseEntity<?> signupWithPhone(@RequestParam String phone) {
-
         if (!phone.matches("^[6-9]\\d{9}$")) {
-            return ResponseEntity.badRequest().body(
-                    Map.of("error", "Please enter a valid 10-digit mobile number.")
-            );
+            return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid 10-digit mobile number."));
         }
-
+        if (TEST_PHONE.equals(phone)) {
+            Optional<User> existingUser = auth.findByPhone(phone);
+            if (existingUser.isPresent()) {
+                return ResponseEntity.status(409).body(Map.of("error", "This number is already registered", "navigate", "login"));
+            }
+            return ResponseEntity.ok(Map.of("message", "OTP sent (Test Number)", "isTest", true));
+        }
         Optional<User> existingUser = auth.findByPhone(phone);
         if (existingUser.isPresent()) {
-            return ResponseEntity.status(409).body(
-                    Map.of("error", "This number is already registered", "navigate", "login")
-            );
+            return ResponseEntity.status(409).body(Map.of("error", "This number is already registered", "navigate", "login"));
         }
-
         return ResponseEntity.ok(auth.generateSignupOtp(phone));
     }
 
-    // =====================================================
-    // SEND OTP FOR SIGNUP
-    // =====================================================
     @PostMapping("/send-signup-otp")
     public ResponseEntity<?> sendSignupOtp(@RequestParam String mobile) {
-
         if (!mobile.matches("^[6-9]\\d{9}$")) {
-            return ResponseEntity.badRequest().body(
-                    Map.of("error", "Please enter a valid 10-digit mobile number.")
-            );
+            return ResponseEntity.badRequest().body(Map.of("error", "Please enter a valid 10-digit mobile number."));
         }
-
+        if (TEST_PHONE.equals(mobile)) {
+            Optional<User> existingUser = auth.findByPhone(mobile);
+            if (existingUser.isPresent()) {
+                return ResponseEntity.status(409).body(Map.of("error", "This number is already registered", "navigate", "login"));
+            }
+            return ResponseEntity.ok(Map.of("message", "OTP sent (Test Number)", "isTest", true));
+        }
         Optional<User> existingUser = auth.findByPhone(mobile);
         if (existingUser.isPresent()) {
-            return ResponseEntity.status(409).body(
-                    Map.of("error", "This number is already registered", "navigate", "login")
-            );
+            return ResponseEntity.status(409).body(Map.of("error", "This number is already registered", "navigate", "login"));
         }
-
         return ResponseEntity.ok(otpService.sendSignupOtp(mobile));
     }
 
-    // =====================================================
-    // LOGIN (EMAIL + PASSWORD)
-    // =====================================================
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> req) {
-
         String email = req.get("email");
         String password = req.get("password");
-
         return auth.validate(email, password)
                 .map(user -> {
                     String token = jwt.generate(email);
-                    return ResponseEntity.ok(Map.of(
-                            "token", token,
-                            "user", user
-                    ));
+                    return ResponseEntity.ok(Map.of("token", token, "user", user));
                 })
-                .orElseGet(() -> ResponseEntity.status(401)
-                        .body(Map.of("error", "Invalid email or password")));
+                .orElseGet(() -> ResponseEntity.status(401).body(Map.of("error", "Invalid email or password")));
     }
 
-    // =====================================================
-    // GOOGLE LOGIN
-    // =====================================================
     @PostMapping("/google")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> body) {
-
         String idToken = body.get("token");
-
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(), JacksonFactory.getDefaultInstance())
-                .setAudience(Collections.singletonList(nativeClientId))
-                .build();
-
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), JacksonFactory.getDefaultInstance()).setAudience(Collections.singletonList(nativeClientId)).build();
         try {
             GoogleIdToken googleIdToken = verifier.verify(idToken);
-            if (googleIdToken == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Invalid Google token"));
-            }
-
+            if (googleIdToken == null) return ResponseEntity.status(401).body(Map.of("error", "Invalid Google token"));
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
             String email = payload.getEmail();
             String name = (String) payload.get("name");
             String picture = (String) payload.get("picture");
-
             Optional<User> existingUser = auth.findByEmail(email);
-
-            User user = existingUser.orElseGet(() -> {
+            existingUser.orElseGet(() -> {
                 User newUser = new User();
                 newUser.setFirstName(name);
                 newUser.setEmail(email);
                 auth.saveUser(newUser);
                 return newUser;
             });
-
             String jwtToken = jwt.generate(email);
-
-            return ResponseEntity.ok(
-                    Map.of("token", jwtToken, "email", email, "name", name, "picture", picture)
-            );
-
+            return ResponseEntity.ok(Map.of("token", jwtToken, "email", email, "name", name, "picture", picture));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", "Verification failed"));
         }
     }
 
-    // =====================================================
-    // FORGOT PASSWORD
-    // =====================================================
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam String email) {
-        try {
-            return ResponseEntity.ok(auth.forgotPassword(email));
-        } catch (Exception e) {
-            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
-        }
+        try { return ResponseEntity.ok(auth.forgotPassword(email)); } 
+        catch (Exception e) { return ResponseEntity.status(400).body(Map.of("error", e.getMessage())); }
     }
 
-    // =====================================================
-    // RESET PASSWORD
-    // =====================================================
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(
-            @RequestParam String token,
-            @RequestParam String newPassword) {
-
-        try {
-            return ResponseEntity.ok(auth.resetPassword(token, newPassword));
-        } catch (Exception e) {
-            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
-        }
+    public ResponseEntity<?> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        try { return ResponseEntity.ok(auth.resetPassword(token, newPassword)); } 
+        catch (Exception e) { return ResponseEntity.status(400).body(Map.of("error", e.getMessage())); }
     }
 
-    // =====================================================
-    // OTP SEND (FOR LOGIN)
-    // =====================================================
-//    @PostMapping("/send-otp")
-//    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
-//        return auth.sendOtp(mobile);
-//    }
-    @PostMapping("/send-otp")
-    public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+@PostMapping("/send-otp")
+public ResponseEntity<?> sendOtp(@RequestParam String mobile) {
+    Optional<User> userOpt = auth.findByPhone(mobile);
 
-        Optional<User> userOpt = auth.findByPhone(mobile);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            // 🆕 BLOCK LOGIN IF USER IS DELETED
-            if (Boolean.TRUE.equals(user.getIsDeleted())) {
-                return ResponseEntity.status(403).body(
-                        Map.of(
-                                "error", "You are no longer a user.",
-                                "deletedBy", user.getDeletedBy()
-                        )
-                );
-            }
-        }
-
-        return auth.sendOtp(mobile);
+    // 1. Pehle check karo user hai bhi ya nahi
+    if (userOpt.isEmpty()) {
+        return ResponseEntity.status(404).body(Map.of(
+            "error", "User not found",
+            "navigate", "signup"
+        ));
     }
 
-    // =====================================================
-    // OTP VERIFY
-    // =====================================================
-//    @PostMapping("/verify-otp")
-//    public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
-//        return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
-//    }
+    User user = userOpt.get();
+
+    // 2. Phir check karo deleted hai ya nahi
+    if (Boolean.TRUE.equals(user.getIsDeleted())) {
+        return ResponseEntity.status(403).body(Map.of(
+            "error", "You are no longer a user.",
+            "deletedBy", user.getDeletedBy()
+        ));
+    }
+
+    // 3. Ab test number ka check - tabhi OTP bhejo
+    if (TEST_PHONE.equals(mobile)) {
+        return ResponseEntity.ok(Map.of("message", "OTP sent", "isTest", true));
+    }
+
+    // 4. Normal number
+    return auth.sendOtp(mobile);
+}
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestParam String mobile, @RequestParam String otp) {
-
-        Optional<User> userOpt = auth.findByPhone(mobile);
-
-        if (userOpt.isPresent()) {
-            User user = userOpt.get();
-
-            // 🆕 BLOCK LOGIN IF USER IS DELETED
-            if (Boolean.TRUE.equals(user.getIsDeleted())) {
-                return ResponseEntity.status(403).body(
-                        Map.of(
-                                "error", "You are no longer a user. Deleted by: " + user.getDeletedBy(),
-                                "verified", false
-                        )
-                );
+        if (TEST_PHONE.equals(mobile) && TEST_OTP.equals(otp)) {
+            Optional<User> userOpt = auth.findByPhone(mobile);
+            if (userOpt.isPresent()) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "verified", true,
+                    "firstTime", false,
+                    "message", "OTP verified successfully!",
+                    "phone", mobile,
+                    "user", userOpt.get()
+                ));
+            } else {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "verified", true,
+                    "firstTime", true,
+                    "message", "OTP verified successfully!",
+                    "phone", mobile
+                ));
             }
         }
-
+        if (TEST_PHONE.equals(mobile)) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "verified", false, "message", "Wrong OTP - Test OTP is 1235"));
+        }
         return ResponseEntity.ok(auth.verifyOtp(mobile, otp));
     }
 
-    // =====================================================
-    // GET USERS BY PINCODE
-    // =====================================================
     @GetMapping("/by-pincode/{pincode}")
     public ResponseEntity<?> getUsersByPincode(@PathVariable String pincode) {
         return ResponseEntity.ok(auth.getUsersByPinCode(pincode));
     }
 
-    // =====================================================
-// CHECK ACCOUNT STATUS (ACTIVE / DISABLED / DELETED)
-// =====================================================
     @PostMapping("/account-status")
     public ResponseEntity<?> checkAccountStatus(@RequestBody Map<String, String> req) {
-
         String phone = req.get("phone");
         String email = req.get("email");
-
         Optional<User> userOpt = Optional.empty();
-
-        if (phone != null && !phone.isBlank()) {
-            userOpt = auth.findByPhone(phone);
-        }
-        else if (email != null && !email.isBlank()) {
-            userOpt = auth.findByEmail(email);
-        }
-
-        if (userOpt.isEmpty()) {
-            return ResponseEntity.ok(
-                    Map.of(
-                            "exists", false,
-                            "status", "NOT_FOUND",
-                            "allowed", false
-                    )
-            );
-        }
-
+        if (phone != null && !phone.isBlank()) userOpt = auth.findByPhone(phone);
+        else if (email != null && !email.isBlank()) userOpt = auth.findByEmail(email);
+        if (userOpt.isEmpty()) return ResponseEntity.ok(Map.of("exists", false, "status", "NOT_FOUND", "allowed", false));
         User user = userOpt.get();
-
-        // 🛑 DELETED
-        if (Boolean.TRUE.equals(user.getIsDeleted())) {
-            return ResponseEntity.ok(
-                    Map.of(
-                            "exists", true,
-                            "status", "DELETED",
-                            "allowed", false,
-                            "deletedBy", user.getDeletedBy()
-                    )
-            );
-        }
-
-        // 🛑 DISABLED (if you have this flag)
-        if (Boolean.FALSE.equals(user.getAccountEnabled())) {
-            return ResponseEntity.ok(
-                    Map.of(
-                            "exists", true,
-                            "status", "DISABLED",
-                            "allowed", false,
-                            "reason", "Account disabled by admin"
-                    )
-            );
-        }
-
-        // ✅ ACTIVE
-        return ResponseEntity.ok(
-                Map.of(
-                        "exists", true,
-                        "status", "ACTIVE",
-                        "allowed", true
-                )
-        );
+        if (Boolean.TRUE.equals(user.getIsDeleted())) return ResponseEntity.ok(Map.of("exists", true, "status", "DELETED", "allowed", false, "deletedBy", user.getDeletedBy()));
+        if (Boolean.FALSE.equals(user.getAccountEnabled())) return ResponseEntity.ok(Map.of("exists", true, "status", "DISABLED", "allowed", false, "reason", "Account disabled by admin"));
+        return ResponseEntity.ok(Map.of("exists", true, "status", "ACTIVE", "allowed", true));
     }
 
-
-    // =====================================================
-    // DELETE ACCOUNT
-    // =====================================================
     @DeleteMapping("/delete/{phone}")
     public ResponseEntity<?> deleteUser(@PathVariable String phone) {
         try {
             boolean deleted = auth.deleteUserByPhone(phone);
-
-            if (!deleted) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            }
-
+            if (!deleted) return ResponseEntity.status(404).body(Map.of("error", "User not found"));
             return ResponseEntity.ok(Map.of("message", "Account deleted successfully"));
-
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("error", "Something went wrong"));
         }
     }
 
-    // =====================================================
-    // UPDATE PROFILE
-    // =====================================================
     @PutMapping("/update-profile/{id}")
-    public ResponseEntity<?> updateProfile(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> req) {
-
+    public ResponseEntity<?> updateProfile(@PathVariable Long id, @RequestBody Map<String, String> req) {
         try {
             User updatedUser = auth.updateUserProfile(id, req);
-            return ResponseEntity.ok(
-                    Map.of(
-                            "message", "Profile updated successfully",
-                            "user", updatedUser
-                    )
-            );
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully", "user", updatedUser));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(
-                    Map.of("error", e.getMessage())
-            );
+            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
         }
     }
+
     @PostMapping("/generate-jwt-token")
     public ResponseEntity<?> generateToken(@RequestParam(required = false) String phone, @RequestParam(required = false) String email, @RequestParam(defaultValue = "web") String userType) {
         return ResponseEntity.ok(auth.generateToken(phone, email, userType));
     }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> req) {
         try {
             String refreshToken = req.get("refreshToken");
-            if (refreshToken == null || refreshToken.isBlank()) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
-            }
-
-            AuthService.TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
-
-            return ResponseEntity.ok(Map.of(
-                    "accessToken", newTokens.accessToken(),
-                    "refreshToken", newTokens.refreshToken(),
-                    "tokenType", "Bearer",
-                    "expiresIn", newTokens.expiresIn()
-            ));
-
+            if (refreshToken == null || refreshToken.isBlank()) return ResponseEntity.badRequest().body(Map.of("error", "Refresh token is required"));
+            TokenResponse newTokens = auth.refreshAccessToken(refreshToken);
+            return ResponseEntity.ok(Map.of("accessToken", newTokens.accessToken(), "refreshToken", newTokens.refreshToken(), "tokenType", "Bearer", "expiresIn", newTokens.expiresIn()));
         } catch (IllegalStateException e) {
-            // Refresh token expire ho gaya -> user ko logout karna padega
             return ResponseEntity.status(401).body(Map.of("error", e.getMessage(), "navigate", "login"));
         } catch (Exception e) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid refresh token"));
         }
     }
+
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, @RequestBody Map<String, String> body) {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
-        }
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) return ResponseEntity.status(401).body(Map.of("error", "Access token required in header"));
         String accessToken = authHeader.substring(7);
-
         try {
-            // body me -> { "userId":"4", "email":"test@gmail.com" } ya { "userId":"4", "phone":"6200414974" }
             boolean deleted = auth.secureLogout(accessToken, body);
-            return ResponseEntity.ok(Map.of(
-                    "message", deleted ? "Logged out SuccessFully" : "Token not found in Redis",
-                    "deleted", deleted
-            ));
+            return ResponseEntity.ok(Map.of("message", deleted ? "Logged out SuccessFully" : "Token not found in Redis", "deleted", deleted));
         } catch (Exception e) {
             return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
         }

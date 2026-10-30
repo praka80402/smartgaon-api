@@ -67,6 +67,7 @@ public class SecurityConfig {
 
                         "/api/enquiries",
                         "/api/enquiries/**",
+                        "/api/delete-account/**",
                         "/api/chat/**",
                         "/api/mandi/**"
 
