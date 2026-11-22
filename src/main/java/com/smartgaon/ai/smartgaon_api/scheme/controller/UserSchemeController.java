@@ -3,12 +3,15 @@ package com.smartgaon.ai.smartgaon_api.scheme.controller;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 
+
 import org.springframework.web.bind.annotation.*;
 
-import com.smartgaon.ai.smartgaon_api.scheme.entity.Category;
 import com.smartgaon.ai.smartgaon_api.scheme.entity.*;
 import com.smartgaon.ai.smartgaon_api.scheme.service.UserSchemeService;
 import com.smartgaon.ai.smartgaon_api.scheme.dto.InterestedRequest;
+import com.smartgaon.ai.smartgaon_api.scheme.dto.UserCategoryResponse;
+import com.smartgaon.ai.smartgaon_api.scheme.dto.UserSchemeResponse;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,44 +23,45 @@ public class UserSchemeController {
 
     private final UserSchemeService service;
 
+
     // ================= GET ALL CATEGORIES =================
     @GetMapping("/categories")
-    public List<Category> getAllCategories() {
-        return service.getAllCategories();
+    public List<UserCategoryResponse> getAllCategories(
+            @RequestParam(required = false) String lang
+    ) {
+        return service.getAllCategories(Language.from(lang));
     }
 
     // ================= CENTRAL SCHEMES =================
     @GetMapping("/central")
-    public List<Scheme> getCentralSchemes(
-            @RequestParam(required = false) Long categoryId
+    public List<UserSchemeResponse> getCentralSchemes(
+            @RequestParam Long categoryId,
+            @RequestParam(required = false) String lang
     ) {
-        if (categoryId != null) {
-            return service.getCentralSchemes(categoryId);
-        }
-        return service.getAllCentralSchemes();
+        return service.getCentralSchemes(categoryId, Language.from(lang));
     }
     
     // ================= SCHEME DETAIL =================
     @GetMapping("/{schemeId}")
-    public Scheme getSchemeDetail(
-            @PathVariable Long schemeId
+    public UserSchemeResponse getSchemeDetail(
+            @PathVariable Long schemeId,
+            @RequestParam(required = false) String lang
     ) {
-        return service.getSchemeDetail(schemeId);
+        return service.getSchemeDetail(schemeId, Language.from(lang));
     }
 
     // ================= STATE SCHEMES =================
     @GetMapping("/state")
-    public List<Scheme> getStateSchemes(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam State state
+    public List<UserSchemeResponse> getStateSchemes(
+            @RequestParam Long categoryId,
+            @RequestParam State state,
+            @RequestParam(required = false) String lang
     ) {
-        if (categoryId != null) {
-            return service.getStateSchemesByState(categoryId, state);
-        }
-        return service.getAllStateSchemesByState(state);
+        return service.getStateSchemesByState(categoryId, state, Language.from(lang));
     }
     
-    // ================= INTERESTED =================
+    
+ // ================= INTERESTED =================
     @PostMapping("/{schemeId}/interested")
     public ResponseEntity<?> addInterested(
             @PathVariable Long schemeId,
@@ -83,5 +87,7 @@ public class UserSchemeController {
     ) {
         return service.isAlreadyInterested(schemeId, phone);
     }
+
+
 
 }
