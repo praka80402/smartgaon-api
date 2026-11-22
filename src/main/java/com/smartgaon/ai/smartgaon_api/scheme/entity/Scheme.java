@@ -1,5 +1,11 @@
 package com.smartgaon.ai.smartgaon_api.scheme.entity;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,6 +37,7 @@ public class Scheme {
     @Enumerated(EnumType.STRING)
     private State state;
 
+    // English (default) text
     @Column(nullable = false)
     private String title;
 
@@ -43,6 +50,15 @@ public class Scheme {
     @Column(columnDefinition = "TEXT")
     private String eligibility;
 
+    // Hindi, Marathi, ... text — same table the admin panel writes to
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "scheme_translations", joinColumns = @JoinColumn(name = "scheme_id"))
+    @MapKeyEnumerated(EnumType.STRING)
+    @MapKeyColumn(name = "language", length = 10)
+    @Fetch(FetchMode.SUBSELECT)
+    @Builder.Default
+    private Map<Language, SchemeContent> translations = new HashMap<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
@@ -53,8 +69,9 @@ public class Scheme {
 
     @Column(name = "scheme_url")
     private String schemeUrl;
-    
+
     @Column(name = "interest_count")
+    @Builder.Default
     private Long interestCount = 0L;
 
 }
