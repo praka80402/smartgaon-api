@@ -69,7 +69,9 @@ public class SecurityConfig {
                         "/api/enquiries/**",
                         "/api/delete-account/**",
                         "/api/chat/**",
-                        "/api/mandi/**"
+                        "/api/mandi/**",
+                        "/api/kisan-mitra/**",
+                        "/api/fertilizer/**"
 
                 ).permitAll()
                 .anyRequest().authenticated()
